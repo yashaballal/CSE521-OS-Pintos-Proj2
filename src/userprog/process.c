@@ -246,7 +246,7 @@ load (struct args_passed *args_p, void (**eip) (void), void **esp)
   off_t file_ofs;
   bool success = false;
   int i;
-  printf("LC: Inside load()");
+  //printf("LC: Inside load()");
   void *s_pointer[args_p->argc];
   int  padding;
   char *top = (char *) PHYS_BASE;
@@ -260,6 +260,8 @@ load (struct args_passed *args_p, void (**eip) (void), void **esp)
 
   /* Open executable file. */
   file = filesys_open (args_p->argv[0]);
+  //printf("File %s loaded\n",args_p->argv[0]);
+
   if (file == NULL) 
     {
       printf ("load: %s: open failed\n", args_p->argv[0]);
@@ -342,14 +344,17 @@ load (struct args_passed *args_p, void (**eip) (void), void **esp)
   if (!setup_stack (esp))
     goto done;
 
+  printf("Before for top = %s\n",top);
   for (int i = args_p->argc - 1; i >= 0; i--) 
   {
     int size = strlen(args_p->argv[i]) + 1;
     char *dest = top - size;
     memcpy((void *) dest, (void *) args_p->argv[i], size);
     s_pointer[i] = (void *) dest;
+    printf("s_pointer at %d = %s",i,s_pointer[i]);
     top = dest;
   }
+  printf("After for top = %s\n",top);
 
   padding = (uint32_t) top % WORD_SIZE;
   for (int i = 0; i < padding; i++) 
