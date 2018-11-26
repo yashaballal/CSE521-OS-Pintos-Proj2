@@ -287,12 +287,16 @@ load (struct args_passed *args_p, void (**eip) (void), void **esp)
     {
       struct Elf32_Phdr phdr;
 
-      if (file_ofs < 0 || file_ofs > file_length (file))
+      if (file_ofs < 0 || file_ofs > file_length (file)){
+        printf("Inside 1");
         goto done;
+      }
       file_seek (file, file_ofs);
 
-      if (file_read (file, &phdr, sizeof phdr) != sizeof phdr)
+      if (file_read (file, &phdr, sizeof phdr) != sizeof phdr){
+        printf("Inside 2");
         goto done;
+      }
       file_ofs += sizeof phdr;
       switch (phdr.p_type) 
         {
@@ -305,8 +309,10 @@ load (struct args_passed *args_p, void (**eip) (void), void **esp)
           break;
         case PT_DYNAMIC:
         case PT_INTERP:
-        case PT_SHLIB:
+        case PT_SHLIB:{
+          printf("Inside 3");
           goto done;
+        }
         case PT_LOAD:
           if (validate_segment (&phdr, file)) 
             {
@@ -331,11 +337,15 @@ load (struct args_passed *args_p, void (**eip) (void), void **esp)
                   zero_bytes = ROUND_UP (page_offset + phdr.p_memsz, PGSIZE);
                 }
               if (!load_segment (file, file_page, (void *) mem_page,
-                                 read_bytes, zero_bytes, writable))
+                                 read_bytes, zero_bytes, writable)){
+                printf("Inside 4");
                 goto done;
             }
-          else
+            }
+          else{
+            printf("Inside 5");
             goto done;
+          }
           break;
         }
     }
