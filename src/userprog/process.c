@@ -287,16 +287,12 @@ load (struct args_passed *args_p, void (**eip) (void), void **esp)
     {
       struct Elf32_Phdr phdr;
 
-      if (file_ofs < 0 || file_ofs > file_length (file)){
-        printf("Inside 1");
+      if (file_ofs < 0 || file_ofs > file_length (file))
         goto done;
-      }
       file_seek (file, file_ofs);
 
-      if (file_read (file, &phdr, sizeof phdr) != sizeof phdr){
-        printf("Inside 2");
+      if (file_read (file, &phdr, sizeof phdr) != sizeof phdr)
         goto done;
-      }
       file_ofs += sizeof phdr;
       switch (phdr.p_type) 
         {
@@ -309,10 +305,8 @@ load (struct args_passed *args_p, void (**eip) (void), void **esp)
           break;
         case PT_DYNAMIC:
         case PT_INTERP:
-        case PT_SHLIB:{
-          printf("Inside 3");
+        case PT_SHLIB:
           goto done;
-        }
         case PT_LOAD:
           if (validate_segment (&phdr, file)) 
             {
@@ -337,15 +331,11 @@ load (struct args_passed *args_p, void (**eip) (void), void **esp)
                   zero_bytes = ROUND_UP (page_offset + phdr.p_memsz, PGSIZE);
                 }
               if (!load_segment (file, file_page, (void *) mem_page,
-                                 read_bytes, zero_bytes, writable)){
-                printf("Inside 4");
+                                 read_bytes, zero_bytes, writable))
                 goto done;
             }
-            }
-          else{
-            printf("Inside 5");
+          else
             goto done;
-          }
           break;
         }
     }
@@ -483,13 +473,16 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 
       /* Get a page of memory. */
       uint8_t *kpage = palloc_get_page (PAL_USER);
-      if (kpage == NULL)
+      if (kpage == NULL){
+        printf("Inside 1");
         return false;
+      }
 
       /* Load this page. */
       if (file_read (file, kpage, page_read_bytes) != (int) page_read_bytes)
         {
           palloc_free_page (kpage);
+          printf("Inside 2");
           return false; 
         }
       memset (kpage + page_read_bytes, 0, page_zero_bytes);
@@ -497,6 +490,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
       /* Add the page to the process's address space. */
         {
           palloc_free_page (kpage);
+          printf("Inside 3");
           return false; 
         }
 
