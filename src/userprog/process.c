@@ -38,6 +38,8 @@ process_execute (const char *file_name)
   char *fn_copy;
   tid_t tid;
 
+  printf("LC: Inside Process_execute()\n");
+
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
   fn_copy = palloc_get_page (0);
@@ -49,9 +51,18 @@ process_execute (const char *file_name)
   char *save_ptr;
   memcpy(file_name_copy, file_name, sizeof(file_name_copy));
   const char *command = strtok_r(file_name_copy, " ", &save_ptr);
+  printf("LC: command - %s\n",command);
 
   /* Create a new thread to execute FILE_NAME. */
-  tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
+  tid = thread_create (command, PRI_DEFAULT, start_process, fn_copy);
+   struct tchild_status *child = malloc(sizeof(struct tchild_status));
+  child->thread_id = tid;
+  child->completed = false;
+  child->status = -1;
+  list_push_back(&(thread_current()->child_list), &(child->child_elem));
+
+  printf("LC: Reached here...\n");
+
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
   return tid;
