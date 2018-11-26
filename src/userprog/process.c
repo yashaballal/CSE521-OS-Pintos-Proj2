@@ -506,6 +506,8 @@ setup_stack (void **esp)
   uint8_t *kpage;
   bool success = false;
 
+  printf("LC: Inside setup_stack()");
+
   kpage = palloc_get_page (PAL_USER | PAL_ZERO);
   if (kpage != NULL) 
     {
@@ -516,7 +518,7 @@ setup_stack (void **esp)
         palloc_free_page (kpage);
     }
 
-  
+  printf("LC: Success value - %d",success);
   return success;
 }
 
