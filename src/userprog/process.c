@@ -344,17 +344,17 @@ load (struct args_passed *args_p, void (**eip) (void), void **esp)
   if (!setup_stack (esp))
     goto done;
 
-  printf("Before for top = %s\n",top);
+  //printf("Before for top = %s\n",top);
   for (int i = args_p->argc - 1; i >= 0; i--) 
   {
     int size = strlen(args_p->argv[i]) + 1;
     char *dest = top - size;
     memcpy((void *) dest, (void *) args_p->argv[i], size);
     s_pointer[i] = (void *) dest;
-    printf("s_pointer at %d = %s",i,s_pointer[i]);
+    //printf("s_pointer at %d = %s",i,s_pointer[i]);
     top = dest;
   }
-  printf("After for top = %s\n",top);
+  //printf("After for top = %s\n",top);
 
   padding = (uint32_t) top % WORD_SIZE;
   for (int i = 0; i < padding; i++) 
@@ -507,7 +507,7 @@ setup_stack (void **esp)
   uint8_t *kpage;
   bool success = false;
 
-  printf("LC: Inside setup_stack()");
+  //printf("LC: Inside setup_stack()");
 
   kpage = palloc_get_page (PAL_USER | PAL_ZERO);
   if (kpage != NULL) 
@@ -519,7 +519,7 @@ setup_stack (void **esp)
         palloc_free_page (kpage);
     }
 
-  printf("LC: Success value - %d",success);
+  //printf("LC: Success value - %d",success);
   return success;
 }
 
