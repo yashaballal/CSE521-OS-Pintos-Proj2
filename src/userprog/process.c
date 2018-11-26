@@ -38,7 +38,7 @@ process_execute (const char *file_name)
 {
   char *fn_copy;
   tid_t tid;
-  printf("LC: Inside process_execute()\n");
+  //printf("LC: Inside process_execute()\n");
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the c/aller and load(). */
   fn_copy = palloc_get_page (0);
@@ -72,7 +72,7 @@ start_process (void *file_name_)
   char *file_name = file_name_;
   struct intr_frame if_;
   bool success;
-
+  //printf("LC;: Here\n");
   struct args_passed args_p;
   args_p.argc = 0;
   char *save_ptr = NULL;
@@ -81,8 +81,10 @@ start_process (void *file_name_)
         argument = strtok_r(NULL, " ", &save_ptr))
   {
      args_p.argv[args_p.argc] = argument;
+     //printf("%s\n",args_p.argv[args_p.argc]);
      args_p.argc++;
   }
+  //printf("%d\n",args_p.argc++);
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
@@ -244,7 +246,7 @@ load (struct args_passed *args_p, void (**eip) (void), void **esp)
   off_t file_ofs;
   bool success = false;
   int i;
-
+  printf("LC: Inside load()");
   void *s_pointer[args_p->argc];
   int  padding;
   char *top = (char *) PHYS_BASE;
