@@ -256,10 +256,10 @@ load (struct args_passed *args_p, void (**eip) (void), void **esp)
   process_activate ();
 
   /* Open executable file. */
-  file = filesys_open (file_name);
+  file = filesys_open (args_p->argv[0]);
   if (file == NULL) 
     {
-      printf ("load: %s: open failed\n", file_name);
+      printf ("load: %s: open failed\n", args_p->argv[0]);
       goto done; 
     }
 
@@ -272,7 +272,7 @@ load (struct args_passed *args_p, void (**eip) (void), void **esp)
       || ehdr.e_phentsize != sizeof (struct Elf32_Phdr)
       || ehdr.e_phnum > 1024) 
     {
-      printf ("load: %s: error loading executable\n", file_name);
+     printf ("load: %s: error loading executable\n", args_p->argv[0]);
       goto done; 
     }
 
