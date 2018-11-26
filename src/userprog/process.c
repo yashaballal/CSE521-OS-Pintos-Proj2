@@ -225,7 +225,7 @@ struct Elf32_Phdr
 #define PF_W 2          /* Writable. */
 #define PF_R 4          /* Readable. */
 
-static bool setup_stack (struct args_passed *args_p, void **esp);
+static bool setup_stack (void **esp);
 static bool validate_segment (const struct Elf32_Phdr *, struct file *);
 static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
                           uint32_t read_bytes, uint32_t zero_bytes,
@@ -332,8 +332,45 @@ load (struct args_passed *args_p, void (**eip) (void), void **esp)
     }
 
   /* Set up stack. */
-  if (!setup_stack (args_p, esp))
+  if (!setup_stack (esp))
     goto done;
+
+  for (int i = args_p->argc - 1; i >= 0; i--) 
+  {
+    int size = strlen(args_p->argv[i]) + 1;
+    char *dest = top - size;
+    memcpy((void *) dest, (void *) args_p->argv[i], size);
+    s_pointer[i] = (void *) dest;
+    top = dest;
+  }
+
+  padding = (uint32_t) top % WORD_SIZE;
+  for (int i = 0; i < padding; i++) 
+  {
+    memcpy(top - 1, &zero, 1);
+    top--;
+  }
+
+  memcpy(top - WORD_SIZE, &zero, WORD_SIZE);
+  top -= WORD_SIZE;
+  
+  for (int i = args_p->argc - 1; i >= 0; i--) 
+  {
+    memcpy(top - WORD_SIZE, &s_pointer[i], WORD_SIZE);
+    top -= WORD_SIZE;
+  }
+  
+  memcpy(top - WORD_SIZE, &top, WORD_SIZE);
+  top -= WORD_SIZE;
+
+  memcpy(top - WORD_SIZE, &(args_p->argc), WORD_SIZE);
+  top -= WORD_SIZE;
+
+  memcpy(top - WORD_SIZE, &zero, WORD_SIZE);
+  top -= WORD_SIZE;
+
+  *esp = (void *) top;
+  hex_dump(PHYS_BASE - 128, PHYS_BASE - 128, 128, true);
 
   /* Start address. */
   *eip = (void (*) (void)) ehdr.e_entry;
@@ -452,7 +489,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 /* Create a minimal stack by mapping a zeroed page at the top of
    user virtual memory. */
 static bool
-setup_stack (struct args_passed *args_p , void **esp) 
+setup_stack (void **esp) 
 {
   uint8_t *kpage;
   bool success = false;
@@ -471,42 +508,7 @@ setup_stack (struct args_passed *args_p , void **esp)
         palloc_free_page (kpage);
     }
 
-  for (int i = args_p->argc - 1; i >= 0; i--) 
-  {
-    int size = strlen(args_p->argv[i]) + 1;
-    char *dest = top - size;
-    memcpy((void *) dest, (void *) args_p->argv[i], size);
-    s_pointer[i] = (void *) dest;
-    top = dest;
-  }
-
-  padding = (uint32_t) top % WORD_SIZE;
-  for (int i = 0; i < padding; i++) 
-  {
-    memcpy(top - 1, &zero, 1);
-    top--;
-  }
-
-  memcpy(top - WORD_SIZE, &zero, WORD_SIZE);
-  top -= WORD_SIZE;
   
-  for (int i = args_p->argc - 1; i >= 0; i--) 
-  {
-    memcpy(top - WORD_SIZE, &s_pointer[i], WORD_SIZE);
-    top -= WORD_SIZE;
-  }
-  
-  memcpy(top - WORD_SIZE, &top, WORD_SIZE);
-  top -= WORD_SIZE;
-
-  memcpy(top - WORD_SIZE, &(args_p->argc), WORD_SIZE);
-  top -= WORD_SIZE;
-
-  memcpy(top - WORD_SIZE, &zero, WORD_SIZE);
-  top -= WORD_SIZE;
-
-  *esp = (void *) top;
-  hex_dump(PHYS_BASE - 128, PHYS_BASE - 128, 128, true);
   return success;
 }
 
