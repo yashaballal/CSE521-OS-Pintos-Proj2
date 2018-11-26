@@ -473,26 +473,23 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 
       /* Get a page of memory. */
       uint8_t *kpage = palloc_get_page (PAL_USER);
-      if (kpage == NULL){
-        printf("Inside 1");
+      if (kpage == NULL)
         return false;
-      }
 
       /* Load this page. */
       if (file_read (file, kpage, page_read_bytes) != (int) page_read_bytes)
         {
           palloc_free_page (kpage);
-          printf("Inside 2");
           return false; 
         }
       memset (kpage + page_read_bytes, 0, page_zero_bytes);
 
       /* Add the page to the process's address space. */
-        {
-          palloc_free_page (kpage);
-          printf("Inside 3");
-          return false; 
-        }
+      if(!install_page(upage, kpage, writable))
+      {
+        palloc_free_page (kpage);
+        return false; 
+      }
 
       /* Advance. */
       read_bytes -= page_read_bytes;
