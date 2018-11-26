@@ -4,6 +4,9 @@
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 
+#define WORD_SIZE sizeof(void *)
+#define MAX_ARGS_COUNT 3
+
 static void syscall_handler (struct intr_frame *);
 
 void
@@ -17,6 +20,13 @@ syscall_handler (struct intr_frame *f UNUSED)
 {
 	int* stack_pointer = f->esp;
 	int syscall_num = *stack_pointer;
+	int i;
+	void *args[MAX_ARGS_COUNT];
+
+	for(i=0; i<MAX_ARGS_COUNT; i++){
+		args[i] = stack_pointer + WORD_SIZE * i;
+		printf("%s\n", args[i]);
+	}
 
 	switch(syscall_num){
 		case SYS_HALT:
