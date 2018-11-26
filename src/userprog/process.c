@@ -1,4 +1,3 @@
-#include "userprog/process.h"
 #include <debug.h>
 #include <inttypes.h>
 #include <round.h>
@@ -19,8 +18,10 @@
 #include "threads/vaddr.h"
 #include "threads/malloc.h"
 
- #define WORD_SIZE sizeof(void *)
- struct args_passed {
+
+#define WORD_SIZE sizeof(void *)
+
+struct args_passed {
   int argc;
   char *argv[128];
 };
@@ -38,10 +39,8 @@ process_execute (const char *file_name)
   char *fn_copy;
   tid_t tid;
 
-  printf("LC: Inside Process_execute()\n");
-
   /* Make a copy of FILE_NAME.
-     Otherwise there's a race between the caller and load(). */
+     Otherwise there's a race between the c/aller and load(). */
   fn_copy = palloc_get_page (0);
   if (fn_copy == NULL)
     return TID_ERROR;
@@ -51,15 +50,14 @@ process_execute (const char *file_name)
   char *save_ptr;
   memcpy(file_name_copy, file_name, sizeof(file_name_copy));
   const char *command = strtok_r(file_name_copy, " ", &save_ptr);
-  printf("LC: command - %s\n",command);
-
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (command, PRI_DEFAULT, start_process, fn_copy);
-  //  struct tchild_status *child = malloc(sizeof(struct tchild_status));
-  // child->thread_id = tid;
-  // child->completed = false;
-  // child->status = -1;
-  // list_push_back(&(thread_current()->child_list), &(child->child_elem));
+
+  struct tchild_status *child = malloc(sizeof(struct tchild_status));
+  child->thread_id = tid;
+  child->completed = false;
+  child->status = -1;
+  list_push_back(&(thread_current()->child_list), &(child->child_elem));
 
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
@@ -85,7 +83,6 @@ start_process (void *file_name_)
      args_p.argv[args_p.argc] = argument;
      args_p.argc++;
   }
-
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
@@ -114,7 +111,6 @@ start_process (void *file_name_)
    child of the calling process, or if process_wait() has already
    been successfully called for the given TID, returns -1
    immediately, without waiting.
-
    This function will be implemented in problem 2-2.  For now, it
    does nothing. */
 int
@@ -229,7 +225,7 @@ struct Elf32_Phdr
 #define PF_W 2          /* Writable. */
 #define PF_R 4          /* Readable. */
 
-static bool setup_stack (void **esp);
+static bool setup_stack (struct args_passed *args_p, void **esp);
 static bool validate_segment (const struct Elf32_Phdr *, struct file *);
 static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
                           uint32_t read_bytes, uint32_t zero_bytes,
@@ -272,7 +268,7 @@ load (struct args_passed *args_p, void (**eip) (void), void **esp)
       || ehdr.e_phentsize != sizeof (struct Elf32_Phdr)
       || ehdr.e_phnum > 1024) 
     {
-     printf ("load: %s: error loading executable\n", args_p->argv[0]);
+      printf ("load: %s: error loading executable\n", args_p->argv[0]);
       goto done; 
     }
 
@@ -336,7 +332,7 @@ load (struct args_passed *args_p, void (**eip) (void), void **esp)
     }
 
   /* Set up stack. */
-  if (!setup_stack (esp))
+  if (!setup_stack (args_p, esp))
     goto done;
 
   /* Start address. */
@@ -402,15 +398,11 @@ validate_segment (const struct Elf32_Phdr *phdr, struct file *file)
 /* Loads a segment starting at offset OFS in FILE at address
    UPAGE.  In total, READ_BYTES + ZERO_BYTES bytes of virtual
    memory are initialized, as follows:
-
         - READ_BYTES bytes at UPAGE must be read from FILE
           starting at offset OFS.
-
         - ZERO_BYTES bytes at UPAGE + READ_BYTES must be zeroed.
-
    The pages initialized by this function must be writable by the
    user process if WRITABLE is true, read-only otherwise.
-
    Return true if successful, false if a memory allocation error
    or disk read error occurs. */
 static bool
@@ -444,7 +436,6 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
       memset (kpage + page_read_bytes, 0, page_zero_bytes);
 
       /* Add the page to the process's address space. */
-      if (!install_page (upage, kpage, writable)) 
         {
           palloc_free_page (kpage);
           return false; 
@@ -461,10 +452,14 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 /* Create a minimal stack by mapping a zeroed page at the top of
    user virtual memory. */
 static bool
-setup_stack (void **esp) 
+setup_stack (struct args_passed *args_p , void **esp) 
 {
   uint8_t *kpage;
   bool success = false;
+  void *s_pointer[args_p->argc];
+  int  padding;
+  char *top = (char *) PHYS_BASE;
+  int zero = 0;
 
   kpage = palloc_get_page (PAL_USER | PAL_ZERO);
   if (kpage != NULL) 
@@ -475,6 +470,43 @@ setup_stack (void **esp)
       else
         palloc_free_page (kpage);
     }
+
+  for (int i = args_p->argc - 1; i >= 0; i--) 
+  {
+    int size = strlen(args_p->argv[i]) + 1;
+    char *dest = top - size;
+    memcpy((void *) dest, (void *) args_p->argv[i], size);
+    s_pointer[i] = (void *) dest;
+    top = dest;
+  }
+
+  padding = (uint32_t) top % WORD_SIZE;
+  for (int i = 0; i < padding; i++) 
+  {
+    memcpy(top - 1, &zero, 1);
+    top--;
+  }
+
+  memcpy(top - WORD_SIZE, &zero, WORD_SIZE);
+  top -= WORD_SIZE;
+  
+  for (int i = args_p->argc - 1; i >= 0; i--) 
+  {
+    memcpy(top - WORD_SIZE, &s_pointer[i], WORD_SIZE);
+    top -= WORD_SIZE;
+  }
+  
+  memcpy(top - WORD_SIZE, &top, WORD_SIZE);
+  top -= WORD_SIZE;
+
+  memcpy(top - WORD_SIZE, &(args_p->argc), WORD_SIZE);
+  top -= WORD_SIZE;
+
+  memcpy(top - WORD_SIZE, &zero, WORD_SIZE);
+  top -= WORD_SIZE;
+
+  *esp = (void *) top;
+  hex_dump(PHYS_BASE - 128, PHYS_BASE - 128, 128, true);
   return success;
 }
 
