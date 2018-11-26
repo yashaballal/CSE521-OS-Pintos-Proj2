@@ -335,43 +335,7 @@ load (struct args_passed *args_p, void (**eip) (void), void **esp)
   if (!setup_stack (esp))
     goto done;
 
-  for (int i = args_p->argc - 1; i >= 0; i--) 
-  {
-    int size = strlen(args_p->argv[i]) + 1;
-    char *dest = top - size;
-    memcpy((void *) dest, (void *) args_p->argv[i], size);
-    s_pointer[i] = (void *) dest;
-    top = dest;
-  }
-
-  padding = (uint32_t) top % WORD_SIZE;
-  for (int i = 0; i < padding; i++) 
-  {
-    memcpy(top - 1, &zero, 1);
-    top--;
-  }
-
-  memcpy(top - WORD_SIZE, &zero, WORD_SIZE);
-  top -= WORD_SIZE;
   
-  for (int i = args_p->argc - 1; i >= 0; i--) 
-  {
-    memcpy(top - WORD_SIZE, &s_pointer[i], WORD_SIZE);
-    top -= WORD_SIZE;
-  }
-  
-  memcpy(top - WORD_SIZE, &top, WORD_SIZE);
-  top -= WORD_SIZE;
-
-  memcpy(top - WORD_SIZE, &(args_p->argc), WORD_SIZE);
-  top -= WORD_SIZE;
-
-  memcpy(top - WORD_SIZE, &zero, WORD_SIZE);
-  top -= WORD_SIZE;
-
-  *esp = (void *) top;
-  hex_dump(PHYS_BASE - 128, PHYS_BASE - 128, 128, true);
-
   /* Start address. */
   *eip = (void (*) (void)) ehdr.e_entry;
 
