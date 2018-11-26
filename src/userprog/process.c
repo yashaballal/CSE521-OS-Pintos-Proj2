@@ -55,13 +55,11 @@ process_execute (const char *file_name)
 
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (command, PRI_DEFAULT, start_process, fn_copy);
-   struct tchild_status *child = malloc(sizeof(struct tchild_status));
-  child->thread_id = tid;
-  child->completed = false;
-  child->status = -1;
-  list_push_back(&(thread_current()->child_list), &(child->child_elem));
-
-  printf("LC: Reached here...\n");
+  //  struct tchild_status *child = malloc(sizeof(struct tchild_status));
+  // child->thread_id = tid;
+  // child->completed = false;
+  // child->status = -1;
+  // list_push_back(&(thread_current()->child_list), &(child->child_elem));
 
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
@@ -76,6 +74,19 @@ start_process (void *file_name_)
   char *file_name = file_name_;
   struct intr_frame if_;
   bool success;
+
+  struct args_passed args_p;
+  args_p.argc = 0;
+  char *save_ptr = NULL;
+  char *argument = NULL;
+  for (argument=strtok_r(file_name, " ",&save_ptr); argument!= NULL; 
+        argument = strtok_r(NULL, " ", &save_ptr))
+  {
+     args_p.argv[args_p.argc] = argument;
+     args_p.argc++;
+  }
+
+  printf("LC: Reached here...\n");
 
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
