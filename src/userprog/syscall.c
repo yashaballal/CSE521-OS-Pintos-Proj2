@@ -59,9 +59,6 @@ syscall_handler (struct intr_frame *f UNUSED)
 		case SYS_WRITE:
 			break;
 
-		case SYS_TELL:
-			break;
-
 		case SYS_SEEK:
 			break;
 
