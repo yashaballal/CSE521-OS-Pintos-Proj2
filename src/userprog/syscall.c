@@ -3,6 +3,7 @@
 #include <syscall-nr.h>
 #include "threads/interrupt.h"
 #include "threads/thread.h"
+#include "devices/shutdown.h"
 
 #define WORD_SIZE sizeof(void *)
 #define MAX_ARGS_COUNT 3
@@ -29,6 +30,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 
 	switch(syscall_num){
 		case SYS_HALT:
+		    shutdown_power_off();
 			break;
 
 		case SYS_EXIT:

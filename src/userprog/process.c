@@ -297,10 +297,7 @@ load (struct args_passed *args_p, void (**eip) (void), void **esp)
   bool success = false;
   int i;
   //printf("LC: Inside load()");
-  void *s_pointer[args_p->argc];
-  int  padding;
-  char *top = (char *) PHYS_BASE;
-
+  
   /* Allocate and activate page directory. */
   t->pagedir = pagedir_create ();
   if (t->pagedir == NULL) 
