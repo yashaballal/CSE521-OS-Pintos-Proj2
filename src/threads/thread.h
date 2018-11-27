@@ -4,6 +4,8 @@
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
+#include "threads/synch.h"
+#include "threads/interrupt.h"
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -95,12 +97,28 @@ struct thread
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
+    struct thread *parent;    // pointer to parent thread
+    struct intr_frame i_f;    // Intr frame storing soft interrupt generated during a system call
+    struct lock child_lock;    // lock used to synchronize forking and waiting for child thread
+    struct condition child_cond;    // condition used to synchronize forking and waiting for child thread
+    bool child_ready;    // flag to check if the child is in ready status
+    int fd_counter;    // counter to set identifiers for newly created file descriptors
+    struct list fd_list;    // list of file descriptors held by the thread
+    struct list child_list;    // list storing all the child processes
+    int exec_status; //Used to maintain status if the exec system call was successful  
     uint32_t *pagedir;                  /* Page directory. */
 #endif
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
   };
+
+struct tchild_status{
+   tid_t thread_id;
+   struct list_elem child_elem;    /* list_elem to trace the child the parent thread is waiting on */
+   int status;                     /* maintains the status of the child thread */
+   bool completed;                 /* flag indicating if the child process completed execution */
+};
 
 /* If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.
