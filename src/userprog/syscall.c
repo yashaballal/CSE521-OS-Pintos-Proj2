@@ -21,10 +21,10 @@ syscall_handler (struct intr_frame *f UNUSED)
 	int* stack_pointer = f->esp;
 	int syscall_num = *stack_pointer;
 	int i;
-	void *args[MAX_ARGS_COUNT];
+	void *args_refs[MAX_ARGS_COUNT];
 
 	for(i=0; i<MAX_ARGS_COUNT; i++){
-		args[i] = stack_pointer + (WORD_SIZE * i);
+		args_refs[i] = stack_pointer + (i+1);
 	}
 	//printf("LC: Inside syscall handler - arguments captured\n");
 
@@ -33,6 +33,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 			break;
 
 		case SYS_EXIT:
+			thread_exit();
 			break;
 
 		case SYS_EXEC:
@@ -58,12 +59,17 @@ syscall_handler (struct intr_frame *f UNUSED)
 			break;
 
 		case SYS_WRITE:
-			//printf("LC: Inside write syscall\n");
-			int fd = *((int *) args[0]);
-  			char *buf = *((char **) args[1]);
-  			uint32_t size = *((uint32_t *) args[2]);
-
-  			print ("%d %s %d", fd, buf, size);
+			{
+				//printf("LC: Inside write syscall\n");
+				int fd = *((int*)args_refs[0]);
+				void* buf = (void*)(*((int*)args_refs[1]));
+				unsigned size = *((unsigned*)args_refs[2]);
+	  			//printf("fd - %d \n buf - %s \nsize - %d\n", fd, buf, size);
+	  			if(fd == 1){
+					putbuf(buf, size);
+					f->eax = buf;
+				}
+			}
 			break;
 
 		case SYS_SEEK:
