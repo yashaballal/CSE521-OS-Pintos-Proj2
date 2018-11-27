@@ -131,8 +131,8 @@ process_wait (tid_t child_tid UNUSED)
 
   // Find child
   for (e = list_begin(&cur_thread->child_list); e != list_end(&cur_thread->child_list); e = list_next(e)) {
-    child = list_entry(e, struct child_thread_info, child_elem);
-    if (child->tid == child_tid) {
+    child = list_entry(e, struct tchild_status, child_elem);
+    if (child->thread_id == child_tid) {
       found = true;
       break;
     }
