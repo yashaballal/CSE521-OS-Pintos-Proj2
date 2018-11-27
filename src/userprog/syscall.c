@@ -24,9 +24,9 @@ syscall_handler (struct intr_frame *f UNUSED)
 	void *args[MAX_ARGS_COUNT];
 
 	for(i=0; i<MAX_ARGS_COUNT; i++){
-		args[i] = stack_pointer + WORD_SIZE * i;
-		printf("%s\n", args[i]);
+		args[i] = stack_pointer + (WORD_SIZE * i);
 	}
+	//printf("LC: Inside syscall handler - arguments captured\n");
 
 	switch(syscall_num){
 		case SYS_HALT:
@@ -54,9 +54,16 @@ syscall_handler (struct intr_frame *f UNUSED)
 			break;
 
 		case SYS_READ:
+			printf("LC: Inside read syscall\n");
 			break;
 
 		case SYS_WRITE:
+			//printf("LC: Inside write syscall\n");
+			int fd = *((int *) args[0]);
+  			char *buf = *((char **) args[1]);
+  			uint32_t size = *((uint32_t *) args[2]);
+
+  			print ("%d %s %d", fd, buf, size);
 			break;
 
 		case SYS_SEEK:
