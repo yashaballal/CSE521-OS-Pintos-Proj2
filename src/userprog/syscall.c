@@ -7,6 +7,7 @@
 
 #define WORD_SIZE sizeof(void *)
 #define MAX_ARGS_COUNT 3
+#define STDOUT_LIMIT 100    // setting a limit of bytes to be written
 
 static void syscall_handler (struct intr_frame *);
 
@@ -37,7 +38,6 @@ syscall_handler (struct intr_frame *f UNUSED)
 		{
 			int status = *((int *) args_refs[0]);
 	        thread_current()->exec_status = status;
-	        printf("%s: exit(%d)\n", thread_current()->name, status);
 		    thread_exit();
 			break;
 		}
@@ -67,12 +67,22 @@ syscall_handler (struct intr_frame *f UNUSED)
 			{
 				//printf("LC: Inside write syscall\n");
 				int fd = *((int*)args_refs[0]);
-				void* buf = (void*)(*((int*)args_refs[1]));
+				char* buf = (char*)(*((int*)args_refs[1]));
 				unsigned size = *((unsigned*)args_refs[2]);
 	  			//printf("fd - %d \n buf - %s \nsize - %d\n", fd, buf, size);
 	  			if(fd == 1){
-					putbuf(buf, size);
-					f->eax = buf;
+	  				if(size > STDOUT_LIMIT){
+	  					putbuf(buf, STDOUT_LIMIT);
+						f->eax = STDOUT_LIMIT;
+	  				}
+	  				else{
+	  					putbuf(buf, size);
+	  					f->eax = size;
+	  				}
+					
+				}
+				else{
+
 				}
 			}
 			break;
