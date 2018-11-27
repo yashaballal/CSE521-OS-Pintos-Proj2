@@ -162,6 +162,7 @@ process_exit (void)
 {
   struct thread *cur = thread_current ();
   uint32_t *pd;
+  struct thread *parent = cur->parent;
 
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
@@ -179,7 +180,19 @@ process_exit (void)
       pagedir_activate (NULL);
       pagedir_destroy (pd);
     }
+    
 
+   if(parent != NULL) {
+    lock_acquire(&(parent->child_lock));
+    struct list_elem *e;
+    for (e = list_begin(&parent->child_list); e != list_end(&parent->child_list); e = list_next(e)) {
+      struct tchild_status *child = list_entry(e, struct tchild_status, child_elem);
+      if (child->tid == cur->tid) {
+        child->completed = true;
+        child->status = cur->exec_status;
+        break;
+      }
+    }
     cond_signal(&(parent->child_cond), &(parent->child_lock));
     lock_release(&(parent->child_lock));
 }
