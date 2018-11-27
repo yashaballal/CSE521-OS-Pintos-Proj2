@@ -8,6 +8,8 @@
 #define MAX_ARGS_COUNT 3
 
 static void syscall_handler (struct intr_frame *);
+static void retrieve_args( void *args_refs, int number_of_args);
+
 
 void
 syscall_init (void) 
@@ -20,12 +22,8 @@ syscall_handler (struct intr_frame *f UNUSED)
 {
 	int* stack_pointer = f->esp;
 	int syscall_num = *stack_pointer;
-	int i;
 	void *args_refs[MAX_ARGS_COUNT];
 
-	for(i=0; i<MAX_ARGS_COUNT; i++){
-		args_refs[i] = stack_pointer + (i+1);
-	}
 	//printf("LC: Inside syscall handler - arguments captured\n");
 
 	switch(syscall_num){
@@ -64,6 +62,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 
 		case SYS_WRITE:
 			{
+				retrieve_args( &args_refs, 3);
 				//printf("LC: Inside write syscall\n");
 				int fd = *((int*)args_refs[0]);
 				void* buf = (void*)(*((int*)args_refs[1]));
@@ -87,6 +86,13 @@ syscall_handler (struct intr_frame *f UNUSED)
 
 	}
 
+static void retrieve_args( void *args_refs, int number_of_args)
+  {
+  	for(int i=0; i<number_of_args; i++){
+		args_refs[i] = stack_pointer + (i+1);
+	}
+
+  }
   // printf ("system call!\n");
   // thread_exit ();
 }

@@ -571,7 +571,7 @@ setup_stack (struct args_passed *args_p, void **esp)
   top -= WORD_SIZE;
 
   *esp = (void *) top;
-  hex_dump(PHYS_BASE - 128, PHYS_BASE - 128, 128, true);
+  //hex_dump(PHYS_BASE - 128, PHYS_BASE - 128, 128, true);
   
   //printf("LC: Success value - %d",success);
   return success;
