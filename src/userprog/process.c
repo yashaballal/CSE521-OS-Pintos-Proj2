@@ -118,9 +118,42 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
-  while(true)
+  /*while(true)
   {}
-  return -1;
+  return -1;*/
+  int return_value = 0;
+
+  struct thread *cur_thread = thread_current();
+  lock_acquire(&(cur_thread->child_lock));
+  struct list_elem *e;
+  bool found = false;
+  struct tchild_status *child;
+
+  // Find child
+  for (e = list_begin(&cur_thread->child_list); e != list_end(&cur_thread->child_list); e = list_next(e)) {
+    child = list_entry(e, struct child_thread_info, child_elem);
+    if (child->tid == child_tid) {
+      found = true;
+      break;
+    }
+  }
+
+  // No child, or already seen it
+  if (!found) {
+    return -1;
+  }
+
+  while (!child->completed) {
+    cond_wait(&cur_thread->child_cond, &cur_thread->child_lock);
+  }
+  list_remove(&(child->child_elem));
+
+  return_value = child->status;
+  free(child);
+
+  lock_release(&(cur_thread->child_lock));
+
+  return return_value;
 }
 
 /* Free the current process's resources. */
