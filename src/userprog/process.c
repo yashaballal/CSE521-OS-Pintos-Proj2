@@ -277,7 +277,7 @@ struct Elf32_Phdr
 #define PF_W 2          /* Writable. */
 #define PF_R 4          /* Readable. */
 
-static bool setup_stack (struct args_passed args_p, void **esp);
+static bool setup_stack (struct args_passed *args_p, void **esp);
 static bool validate_segment (const struct Elf32_Phdr *, struct file *);
 static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
                           uint32_t read_bytes, uint32_t zero_bytes,
@@ -300,7 +300,6 @@ load (struct args_passed *args_p, void (**eip) (void), void **esp)
   void *s_pointer[args_p->argc];
   int  padding;
   char *top = (char *) PHYS_BASE;
-  int zero = 0;
 
   /* Allocate and activate page directory. */
   t->pagedir = pagedir_create ();
@@ -395,6 +394,9 @@ load (struct args_passed *args_p, void (**eip) (void), void **esp)
     goto done;
 
   //printf("Before for top = %s\n",top);
+    /* Start address. */
+  *eip = (void (*) (void)) ehdr.e_entry;
+
   success = true;
 
  done:
@@ -510,12 +512,13 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 /* Create a minimal stack by mapping a zeroed page at the top of
    user virtual memory. */
 static bool
-setup_stack (struct args_passed *args_p, struct void **esp) 
+setup_stack (struct args_passed *args_p, void **esp) 
 {
   uint8_t *kpage;
   bool success = false;
   void *s_pointer[args_p->argc];
   int  padding;
+  int zero = 0;
   char *top = (char *) PHYS_BASE;
 
 
@@ -568,11 +571,8 @@ setup_stack (struct args_passed *args_p, struct void **esp)
   top -= WORD_SIZE;
 
   *esp = (void *) top;
-  //hex_dump(PHYS_BASE - 128, PHYS_BASE - 128, 128, true);
+  hex_dump(PHYS_BASE - 128, PHYS_BASE - 128, 128, true);
   
-  /* Start address. */
-  *eip = (void (*) (void)) ehdr.e_entry;
-
   //printf("LC: Success value - %d",success);
   return success;
 }
