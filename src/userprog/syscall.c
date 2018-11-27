@@ -20,10 +20,9 @@ syscall_handler (struct intr_frame *f UNUSED)
 {
 	int* stack_pointer = f->esp;
 	int syscall_num = *stack_pointer;
-	int i;
 	void *args_refs[MAX_ARGS_COUNT];
 
-	for(i=0; i<MAX_ARGS_COUNT; i++){
+	for(int i=0; i<MAX_ARGS_COUNT; i++){
 		args_refs[i] = stack_pointer + (i+1);
 	}
 	//printf("LC: Inside syscall handler - arguments captured\n");
@@ -33,9 +32,13 @@ syscall_handler (struct intr_frame *f UNUSED)
 			break;
 
 		case SYS_EXIT:
-			thread_exit();
+		{
+			int status = *((int *) args_refs[0]);
+	        thread_current()->exec_status = status;
+	        printf("%s: exit(%d)\n", thread_current()->name, status);
+		    thread_exit();
 			break;
-
+		}
 		case SYS_EXEC:
 			break;
 

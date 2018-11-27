@@ -118,9 +118,42 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
-  while(true)
+  /*while(true)
   {}
-  return -1;
+  return -1;*/
+  int return_value = 0;
+
+  struct thread *cur_thread = thread_current();
+  lock_acquire(&(cur_thread->child_lock));
+  struct list_elem *e;
+  bool found = false;
+  struct tchild_status *child;
+
+  // Find child
+  for (e = list_begin(&cur_thread->child_list); e != list_end(&cur_thread->child_list); e = list_next(e)) {
+    child = list_entry(e, struct tchild_status, child_elem);
+    if (child->thread_id == child_tid) {
+      found = true;
+      break;
+    }
+  }
+
+  // No child, or already seen it
+  if (!found) {
+    return -1;
+  }
+
+  while (!child->completed) {
+    cond_wait(&cur_thread->child_cond, &cur_thread->child_lock);
+  }
+  list_remove(&(child->child_elem));
+
+  return_value = child->status;
+  free(child);
+
+  lock_release(&(cur_thread->child_lock));
+
+  return return_value;
 }
 
 /* Free the current process's resources. */
@@ -129,6 +162,7 @@ process_exit (void)
 {
   struct thread *cur = thread_current ();
   uint32_t *pd;
+  struct thread *parent = cur->parent;
 
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
@@ -146,6 +180,22 @@ process_exit (void)
       pagedir_activate (NULL);
       pagedir_destroy (pd);
     }
+    
+
+   if(parent != NULL) {
+    lock_acquire(&(parent->child_lock));
+    struct list_elem *e;
+    for (e = list_begin(&parent->child_list); e != list_end(&parent->child_list); e = list_next(e)) {
+      struct tchild_status *child = list_entry(e, struct tchild_status, child_elem);
+      if (child->thread_id == cur->tid) {
+        child->completed = true;
+        child->status = cur->exec_status;
+        break;
+      }
+    }
+  }
+    cond_signal(&(parent->child_cond), &(parent->child_lock));
+    lock_release(&(parent->child_lock));
 }
 
 /* Sets up the CPU for running user code in the current
@@ -227,7 +277,7 @@ struct Elf32_Phdr
 #define PF_W 2          /* Writable. */
 #define PF_R 4          /* Readable. */
 
-static bool setup_stack (void **esp);
+static bool setup_stack (struct args_passed *args_p, void **esp);
 static bool validate_segment (const struct Elf32_Phdr *, struct file *);
 static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
                           uint32_t read_bytes, uint32_t zero_bytes,
@@ -250,7 +300,6 @@ load (struct args_passed *args_p, void (**eip) (void), void **esp)
   void *s_pointer[args_p->argc];
   int  padding;
   char *top = (char *) PHYS_BASE;
-  int zero = 0;
 
   /* Allocate and activate page directory. */
   t->pagedir = pagedir_create ();
@@ -341,50 +390,11 @@ load (struct args_passed *args_p, void (**eip) (void), void **esp)
     }
 
   /* Set up stack. */
-  if (!setup_stack (esp))
+  if (!setup_stack (args_p, esp))
     goto done;
 
   //printf("Before for top = %s\n",top);
-  for (int i = args_p->argc - 1; i >= 0; i--) 
-  {
-    int size = strlen(args_p->argv[i]) + 1;
-    char *dest = top - size;
-    memcpy((void *) dest, (void *) args_p->argv[i], size);
-    s_pointer[i] = (void *) dest;
-    //printf("s_pointer at %d = %s",i,s_pointer[i]);
-    top = dest;
-  }
-  //printf("After for top = %s\n",top);
-
-  padding = (uint32_t) top % WORD_SIZE;
-  for (int i = 0; i < padding; i++) 
-  {
-    memcpy(top - 1, &zero, 1);
-    top--;
-  }
-
-  memcpy(top - WORD_SIZE, &zero, WORD_SIZE);
-  top -= WORD_SIZE;
-  
-  for (int i = args_p->argc - 1; i >= 0; i--) 
-  {
-    memcpy(top - WORD_SIZE, &s_pointer[i], WORD_SIZE);
-    top -= WORD_SIZE;
-  }
-  
-  memcpy(top - WORD_SIZE, &top, WORD_SIZE);
-  top -= WORD_SIZE;
-
-  memcpy(top - WORD_SIZE, &(args_p->argc), WORD_SIZE);
-  top -= WORD_SIZE;
-
-  memcpy(top - WORD_SIZE, &zero, WORD_SIZE);
-  top -= WORD_SIZE;
-
-  *esp = (void *) top;
-  //hex_dump(PHYS_BASE - 128, PHYS_BASE - 128, 128, true);
-  
-  /* Start address. */
+    /* Start address. */
   *eip = (void (*) (void)) ehdr.e_entry;
 
   success = true;
@@ -502,10 +512,15 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 /* Create a minimal stack by mapping a zeroed page at the top of
    user virtual memory. */
 static bool
-setup_stack (void **esp) 
+setup_stack (struct args_passed *args_p, void **esp) 
 {
   uint8_t *kpage;
   bool success = false;
+  void *s_pointer[args_p->argc];
+  int  padding;
+  int zero = 0;
+  char *top = (char *) PHYS_BASE;
+
 
   //printf("LC: Inside setup_stack()");
 
@@ -519,6 +534,45 @@ setup_stack (void **esp)
         palloc_free_page (kpage);
     }
 
+  for (int i = args_p->argc - 1; i >= 0; i--) 
+  {
+    int size = strlen(args_p->argv[i]) + 1;
+    char *dest = top - size;
+    memcpy((void *) dest, (void *) args_p->argv[i], size);
+    s_pointer[i] = (void *) dest;
+    //printf("s_pointer at %d = %s",i,s_pointer[i]);
+    top = dest;
+  }
+  //printf("After for top = %s\n",top);
+
+  padding = (uint32_t) top % WORD_SIZE;
+  for (int i = 0; i < padding; i++) 
+  {
+    memcpy(top - 1, &zero, 1);
+    top--;
+  }
+
+  memcpy(top - WORD_SIZE, &zero, WORD_SIZE);
+  top -= WORD_SIZE;
+  
+  for (int i = args_p->argc - 1; i >= 0; i--) 
+  {
+    memcpy(top - WORD_SIZE, &s_pointer[i], WORD_SIZE);
+    top -= WORD_SIZE;
+  }
+  
+  memcpy(top - WORD_SIZE, &top, WORD_SIZE);
+  top -= WORD_SIZE;
+
+  memcpy(top - WORD_SIZE, &(args_p->argc), WORD_SIZE);
+  top -= WORD_SIZE;
+
+  memcpy(top - WORD_SIZE, &zero, WORD_SIZE);
+  top -= WORD_SIZE;
+
+  *esp = (void *) top;
+  //hex_dump(PHYS_BASE - 128, PHYS_BASE - 128, 128, true);
+  
   //printf("LC: Success value - %d",success);
   return success;
 }
