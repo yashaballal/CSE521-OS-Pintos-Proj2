@@ -510,10 +510,14 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 /* Create a minimal stack by mapping a zeroed page at the top of
    user virtual memory. */
 static bool
-setup_stack (struct args_passed args_p, struct void **esp) 
+setup_stack (struct args_passed *args_p, struct void **esp) 
 {
   uint8_t *kpage;
   bool success = false;
+  void *s_pointer[args_p->argc];
+  int  padding;
+  char *top = (char *) PHYS_BASE;
+
 
   //printf("LC: Inside setup_stack()");
 
