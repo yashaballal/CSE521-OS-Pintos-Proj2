@@ -33,12 +33,13 @@ syscall_handler (struct intr_frame *f UNUSED)
 			break;
 
 		case SYS_EXIT:
+		{
 			int status = *((int *) args_refs[0]);
-	        thread_current()->exit_status = status;
+	        thread_current()->exec_status = status;
 	        printf("%s: exit(%d)\n", thread_current()->name, status);
 		    thread_exit();
 			break;
-
+		}
 		case SYS_EXEC:
 			break;
 
