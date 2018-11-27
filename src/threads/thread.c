@@ -100,9 +100,11 @@ thread_init (void)
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
 
+  #ifdef USERPROG
   list_init(&thread_current()->child_list);
   cond_init(&thread_current()->child_cond);
   lock_init(&thread_current()->child_lock);
+  #endif
 
 }
 
@@ -204,6 +206,9 @@ thread_create (const char *name, int priority,
   sf->eip = switch_entry;
   sf->ebp = 0;
 
+  #ifdef USERPROG
+  t->parent = thread_current();
+  #endif
   /* Add to run queue. */
   thread_unblock (t);
 

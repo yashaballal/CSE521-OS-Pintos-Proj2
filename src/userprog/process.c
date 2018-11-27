@@ -179,6 +179,9 @@ process_exit (void)
       pagedir_activate (NULL);
       pagedir_destroy (pd);
     }
+
+    cond_signal(&(parent->child_cond), &(parent->child_lock));
+    lock_release(&(parent->child_lock));
 }
 
 /* Sets up the CPU for running user code in the current
