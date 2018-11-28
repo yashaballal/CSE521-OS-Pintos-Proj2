@@ -26,6 +26,13 @@ syscall_init (void)
 static void
 syscall_handler (struct intr_frame *f UNUSED) 
 {
+	if(!(is_user_vaddr(f->esp)) || pagedir_get_page(thread_current()->pagedir, f->esp) == NULL)
+	{
+		thread_current()->exec_status = status;
+        printf("%s: exit(%d)\n", thread_current()->name, thread_curremt()->exec_status);
+        thread_exit();
+	}
+	
 	int* stack_pointer = f->esp;
 	int syscall_num = *stack_pointer;
 	void *args_refs[MAX_ARGS_COUNT];
