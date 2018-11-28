@@ -78,7 +78,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 						f->eax = STDOUT_LIMIT;
 	  				}
 	  				else{
-	  					putbuf(arg_buf, size);
+	  					putbuf(arg_buf, arg_size);
 	  					f->eax = arg_size;
 	  				}
 					
@@ -86,9 +86,9 @@ syscall_handler (struct intr_frame *f UNUSED)
 				else{
 					//child-parent buffer write
 					f->eax = 0;
-					struct list_elem *elem;
-					struct list fdesc = thread_current()->fd_list;
-					for(elem = list_begin(fdesc); elem != list_end(fdesc); e = list_next(elem)){
+					struct list_elem elem;
+					struct list fdesc_list = thread_current()->fd_list;
+					for(elem = list_begin(fdesc_list); elem != list_end(fdesc_list); elem = list_next(elem)){
 						struct file_descriptor *fdesc = list_entry(elem, struct file_descriptor, fdesc_elem);
 						if(fdesc->fd == arg_fd){
 							if(fdesc->buf == NULL && !(fdesc->file->deny_write)){
