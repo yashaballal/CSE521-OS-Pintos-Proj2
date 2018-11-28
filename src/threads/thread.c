@@ -208,7 +208,7 @@ thread_create (const char *name, int priority,
 
   #ifdef USERPROG
   /*Since the file descriptor 1 and 2 is reserved for read and write, count will start from 3*/
-  t->fd_counter = 2;
+  t->fd_counter = 3;
   t->parent = thread_current();
   #endif
   /* Add to run queue. */
