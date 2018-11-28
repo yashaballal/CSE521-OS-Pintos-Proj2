@@ -35,6 +35,11 @@ syscall_handler (struct intr_frame *f UNUSED)
 
 		case SYS_EXIT:
 		{
+			/*The argument to exit is an integer pointer*/
+			if(!(is_user_vaddr(args_refs[0])));
+			{
+				thread_current()->exec_status = -1;
+			}
 			int status = *((int *) args_refs[0]);
 	        thread_current()->exec_status = status;
 	        printf("%s: exit(%d)\n", thread_current()->name, status);
