@@ -15,6 +15,7 @@
 #define STDOUT_LIMIT 100    // setting a limit of bytes to be written
 
 static void syscall_handler (struct intr_frame *);
+static void system_exit(void *args_refs[MAX_ARGS_COUNT]);
 
 void
 syscall_init (void) 
@@ -42,10 +43,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 
 		case SYS_EXIT:
 		{
-			int status = *((int *) args_refs[0]);
-	        thread_current()->exec_status = status;
-	        printf("%s: exit(%d)\n", thread_current()->name, status);
-		    thread_exit();
+			system_exit(&args_refs);
 			break;
 		}
 		case SYS_EXEC:
@@ -60,9 +58,11 @@ syscall_handler (struct intr_frame *f UNUSED)
 				unsigned arg_size = *((unsigned*)args_refs[1]);
 
 				if(arg_fileName == NULL){
-					printf("LC : File name is null\n");
+					//printf("LC : File name is null\n");
 					f->eax = -1;
-					break;
+					int exit_arg[1];
+					exit_arg[0]= -1;
+					system_exit(&exit_arg);
 				}
 
 				lock_acquire(&file_lock);
@@ -80,7 +80,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 				char* arg_fileName = *((char *)args_refs[0]);
 				//printf("LC: File name : %s\n",arg_fileName);
 				if(arg_fileName == NULL){
-					printf("LC : File name is null\n");
+					//printf("LC : File name is null\n");
 					f->eax = -1;
 					break;
 				}
@@ -202,6 +202,12 @@ syscall_handler (struct intr_frame *f UNUSED)
 			break;
 	}
 
+	system_exit(void *exit_args[MAX_ARGS_COUNT]){
+		int status = *((int *) exit_args[0]);
+	    thread_current()->exec_status = status;
+	    printf("%s: exit(%d)\n", thread_current()->name, status);
+		thread_exit();
+	}
   // printf ("system call!\n");
   // thread_exit ();
 }
