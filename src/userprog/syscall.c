@@ -40,7 +40,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 		case SYS_EXIT:
 		{
 			/*The argument to exit is an integer pointer*/
-			if(!(is_user_vaddr(args_refs[0])));
+			if(!(is_user_vaddr(args_refs[0])))
 			{
 				thread_current()->exec_status = -1;
 				break;
@@ -64,7 +64,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 			break;
 
 		case SYS_OPEN:
-		      struct fd *file_desc =(struct fd *) malloc(sizeof(fd));
+		      struct fd *file_desc = (struct fd *) malloc(sizeof(fd));
 		      char *file_name = *((char **) args_refs[0]);
   			  if(file_name == NULL)
     		  {
