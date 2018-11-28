@@ -15,6 +15,7 @@
 #include "userprog/process.h"
 #endif
 
+
 /* Random value for struct thread's `magic' member.
    Used to detect stack overflow.  See the big comment at the top
    of thread.h for details. */
@@ -98,6 +99,13 @@ thread_init (void)
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
+
+  #ifdef USERPROG
+  list_init(&thread_current()->child_list);
+  cond_init(&thread_current()->child_cond);
+  lock_init(&thread_current()->child_lock);
+  #endif
+
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -198,6 +206,9 @@ thread_create (const char *name, int priority,
   sf->eip = switch_entry;
   sf->ebp = 0;
 
+  #ifdef USERPROG
+  t->parent = thread_current();
+  #endif
   /* Add to run queue. */
   thread_unblock (t);
 
