@@ -100,12 +100,6 @@ thread_init (void)
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
 
-  #ifdef USERPROG
-  list_init(&thread_current()->fd_list);
-  list_init(&thread_current()->child_list);
-  cond_init(&thread_current()->child_cond);
-  lock_init(&thread_current()->child_lock);
-  #endif
 
 }
 
@@ -211,6 +205,10 @@ thread_create (const char *name, int priority,
   /*Since the file descriptor 1,2 and 3 is reserved for std input,output and error count will start from 3*/
   t->fd_counter = 3;
   t->parent = thread_current();
+  list_init(&t->fd_list);
+  list_init(&t->child_list);
+  cond_init(&t->child_cond);
+  lock_init(&t->child_lock);
   #endif
   /* Add to run queue. */
   thread_unblock (t);
