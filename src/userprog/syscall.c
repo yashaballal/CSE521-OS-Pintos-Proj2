@@ -68,7 +68,36 @@ syscall_handler (struct intr_frame *f UNUSED)
 			break;
 
 		case SYS_OPEN:
+			{
+				char* arg_fileName = *((int*)args_refs[0]);
+				printf("LC: File name : %s\n",arg_fileName);
+				if(arg_fileName == NULL){
+					printf("LC : File name is null\n");
+					f->eax = -1;
+					break;
+				}
+
+				lock_acquire(&file_lock);
+				struct file *f = filesys_open(arg_fileName);
+				lock_release(&file_lock);
+
+				if(f == NULL){
+					printf("LC: There was an error in opening the file");
+					f->eax = -1;
+					break;
+				}
+
+				struct thread *cur = thread_current();
+				struct file_descriptor fdesc = (struct file_descriptor *) malloc(sizeof(struct file_descriptor));
+				fdesc->fd = cur->fd_counter;
+				(cur->fd_counter)++;
+				fdesc->fdesc_file = f;
+				fdesc->fdesc_fd_buf = NULL;    // nothing in buffer when the file is opened
+				list_push_back(&cur->fd_list, &fdesc->fdesc_elem);
+				f->eax = fdesc->fd;
+			}	
 			break;
+			
 
 		case SYS_FILESIZE:
 			break;
