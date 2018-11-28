@@ -59,6 +59,12 @@ syscall_handler (struct intr_frame *f UNUSED)
 				char* arg_fileName = *((char *)args_refs[0]);
 				unsigned arg_size = *((unsigned*)args_refs[1]);
 
+				if(arg_fileName == NULL){
+					printf("LC : File name is null\n");
+					f->eax = -1;
+					break;
+				}
+
 				lock_acquire(&file_lock);
 				f->eax = filesys_create(arg_fileName, arg_size);
 				lock_release(&file_lock);
