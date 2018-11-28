@@ -101,6 +101,7 @@ thread_init (void)
   initial_thread->tid = allocate_tid ();
 
   #ifdef USERPROG
+  list_init(&thread_current()->fd_list);
   list_init(&thread_current()->child_list);
   cond_init(&thread_current()->child_cond);
   lock_init(&thread_current()->child_lock);
@@ -207,7 +208,7 @@ thread_create (const char *name, int priority,
   sf->ebp = 0;
 
   #ifdef USERPROG
-  /*Since the file descriptor 1 and 2 is reserved for read and write, count will start from 3*/
+  /*Since the file descriptor 1,2 and 3 is reserved for std input,output and error count will start from 3*/
   t->fd_counter = 3;
   t->parent = thread_current();
   #endif

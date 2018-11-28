@@ -8,6 +8,7 @@
 #include "threads/vaddr.h"
 #include "threads/synch.h"
 #include "threads/malloc.h"
+#include "filesys/filesys.h"
 
 #define WORD_SIZE sizeof(void *)
 #define MAX_ARGS_COUNT 3
@@ -27,7 +28,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 	int* stack_pointer = f->esp;
 	int syscall_num = *stack_pointer;
 	void *args_refs[MAX_ARGS_COUNT];
-
+        printf("Reached the syscall handler");
 	for(int i=0; i<MAX_ARGS_COUNT; i++){
 		args_refs[i] = stack_pointer + (i+1);
 	}
@@ -66,16 +67,21 @@ syscall_handler (struct intr_frame *f UNUSED)
 
 		case SYS_OPEN:
 		{
+                      printf("Line 1");
 		      struct file_descriptor *fdesc = (struct file_descriptor *) malloc(sizeof(struct file_descriptor));
+			printf("Line 2");
 		      char *file_name = *((char **) args_refs[0]);
-  			  /*if(file_name == NULL)
-    		  {
-    		  	/*To notify that the thread has failed to the parent process*/
-    		  	 //thread_current()->exec_status = -1;
-    		  	 /* Pintos system call handler returns a value to the user program by 
-    		  	 modifying the eax register*/
-    		  	 //f->eax = -1;
-    		  //}	
+			printf("Line 3");
+                      printf("%s\n", file_name);
+
+  			/*if(file_name == NULL)
+    		        {
+    		  	  To notify that the thread has failed to the parent process
+    		  	  thread_current()->exec_status = -1;
+    		  	  Pintos system call handler returns a value to the user program by 
+    		  	  modifying the eax register
+    		  	  f->eax = -1;
+    		        }*/	
 
   			  lock_acquire(&filesys_lock);
   			  struct file *file_n = filesys_open(file_name);
@@ -91,11 +97,11 @@ syscall_handler (struct intr_frame *f UNUSED)
   			  /*Need to maintain a list of the files opened by the thread*/	
   			  fdesc->fd = thread_current()->fd_counter;
   			  thread_current()->fd_counter++;
-  			  fdesc->f = file_n;
+  			  fdesc->file = file_n;
   			  list_push_back(&thread_current()->fd_list, &fdesc->fd_elem);
   			  f->eax = fdesc->fd;
   			break;
-        }
+                }
 		case SYS_FILESIZE:
 			break;
 
