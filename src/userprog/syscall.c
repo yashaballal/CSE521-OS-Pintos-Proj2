@@ -87,7 +87,8 @@ syscall_handler (struct intr_frame *f UNUSED)
 					//child-parent buffer write
 					f->eax = 0;
 					struct list_elem *elem;
-					for(elem = list_begin(thread_current()->fd_list); elem != list_end(thread_current()->fd_list); elem = list_next(elem)){
+					struct thread *cur_thread = thread_current();
+					for(elem = list_begin(&cur->fd_list); elem != list_end(&cur->fd_list); elem = list_next(elem)){
 						struct file_descriptor *fdesc = list_entry(elem, struct file_descriptor, fdesc_elem);
 						if(fdesc->fd == arg_fd){
 							if(fdesc->fdesc_fd_buf == NULL && !(fdesc->fdesc_file->deny_write)){
