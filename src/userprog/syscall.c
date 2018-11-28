@@ -92,11 +92,11 @@ syscall_handler (struct intr_frame *f UNUSED)
   			  struct file_descriptor *fdesc = (struct file_descriptor *) malloc(sizeof(struct file_descriptor));
   			  /*Need to maintain a list of the files opened by the thread*/	
   			  struct thread *thread_cur = thread_current();
-  			  fdesc->fd = thread_current()->fd_counter;
+  			  fdesc->fd = thread_cur->fd_counter;
   			  thread_cur->fd_counter++;
   			  fdesc->file = file_n;
   			  //printf("Came till here");
-  			  list_push_back(&thread_curr->fd_list, &fdesc->fd_elem);
+  			  list_push_back(&thread_cur->fd_list, &fdesc->fd_elem);
   			  //printf("The next line" );
   			  f->eax = fdesc->fd;
   			break;
