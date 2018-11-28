@@ -1,5 +1,6 @@
 #include "userprog/syscall.h"
 #include <stdio.h>
+#include <list.h>
 #include <syscall-nr.h>
 #include "threads/interrupt.h"
 #include "threads/thread.h"
@@ -66,22 +67,49 @@ syscall_handler (struct intr_frame *f UNUSED)
 		case SYS_WRITE:
 			{
 				//printf("LC: Inside write syscall\n");
-				int fd = *((int*)args_refs[0]);
-				char* buf = (char*)(*((int*)args_refs[1]));
-				unsigned size = *((unsigned*)args_refs[2]);
+				int arg_fd = *((int*)args_refs[0]);
+				char* arg_buf = (char*)(*((int*)args_refs[1]));
+				unsigned arg_size = *((unsigned*)args_refs[2]);
 	  			//printf("fd - %d \n buf - %s \nsize - %d\n", fd, buf, size);
-	  			if(fd == 1){
+	  			if(arg_fd == 1){
+	  				//console write
 	  				if(size > STDOUT_LIMIT){
-	  					putbuf(buf, STDOUT_LIMIT);
+	  					putbuf(arg_buf, STDOUT_LIMIT);
 						f->eax = STDOUT_LIMIT;
 	  				}
 	  				else{
-	  					putbuf(buf, size);
-	  					f->eax = size;
+	  					putbuf(arg_buf, size);
+	  					f->eax = arg_size;
 	  				}
 					
 				}
 				else{
+					//child-parent buffer write
+					f->eax = 0;
+					struct list_elem *elem;
+					struct list fdesc = thread_current()->fd_list;
+					for(elem = list_begin(fdesc); elem != list_end(fdesc); e = list_next(elem)){
+						struct file_descriptor fdesc = list_entry(elem, struct file_descriptor, fdesc_elem);
+						if(fdesc->fd == arg_fd){
+							if(fdesc->buf == NULL && !(fdesc->file->deny_write)){
+								f->eax = file_write(file_desc->f, buf, size);
+							}
+							else{
+								//if the buffer contains data
+								int i = 0;
+								lock_acquire(&fdesc->fd_buf->fd_buffer_lock);
+								while (i < size && fdesc->fd_buf->buf_end != MAX_BUF_SIZE) {
+						          fdesc->fd_buf->fd_buf[fdesc->fd_buf->buf_end] = arg_buf[i];
+						          fdesc->fd_buf->buf_end++;
+						          i++;
+						        }
+								lock_release(&fdesc->fd_buf->fd_buffer_lock);
+								f->eax = i;
+							}
+							break;    // break the for loop
+						}
+					}
+					
 
 				}
 			}
