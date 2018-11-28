@@ -10,6 +10,8 @@
 
 void syscall_init (void);
 
+struct lock file_lock;    //lock created for file system operations synchronizations
+
 struct file_descriptor{
     int fd;    						// File descriptor identifier    (> 2 since 0, 1,and represent standard I/O streams)
     struct list_elem fdesc_elem;    	// list_elem to use as a reference in a list

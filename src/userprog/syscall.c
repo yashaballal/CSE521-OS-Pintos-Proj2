@@ -5,8 +5,8 @@
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 #include "devices/shutdown.h"
+#include "filesys/file.h"
 
-#define WORD_SIZE sizeof(void *)
 #define MAX_ARGS_COUNT 3
 #define STDOUT_LIMIT 100    // setting a limit of bytes to be written
 
@@ -16,6 +16,7 @@ void
 syscall_init (void) 
 {
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
+  list_init(&file_lock);
 }
 
 static void
@@ -50,6 +51,15 @@ syscall_handler (struct intr_frame *f UNUSED)
 			break;
 
 		case SYS_CREATE:
+			{
+				char* arg_fileName = *((int*)args_refs[0]);
+				unsigned arg_size = *((unsigned*)args_refs[1]);
+
+				lock_acquire(&file_lock);
+				f->eax = filesys_create(arg_fileName, initial_size);
+				lock_release(&file_lock);
+
+			}
 			break;
 
 		case SYS_REMOVE:
@@ -125,6 +135,10 @@ syscall_handler (struct intr_frame *f UNUSED)
 		case SYS_CLOSE:
 			break;
 
+
+		default:
+			printf("LC: SYSCALL did not match any of the cases\n");
+			break;
 	}
 
   // printf ("system call!\n");
