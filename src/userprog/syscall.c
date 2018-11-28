@@ -2,10 +2,12 @@
 #include <stdio.h>
 #include <list.h>
 #include <syscall-nr.h>
+
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 #include "devices/shutdown.h"
 #include "filesys/file.h"
+#include "devices/input.h"
 
 #define MAX_ARGS_COUNT 3
 #define STDOUT_LIMIT 100    // setting a limit of bytes to be written
@@ -72,7 +74,24 @@ syscall_handler (struct intr_frame *f UNUSED)
 			break;
 
 		case SYS_READ:
-			printf("LC: Inside read syscall\n");
+			{
+				//printf("LC: Inside read syscall\n");
+				int arg_fd = *((int*)args_refs[0]);
+				char* arg_buf = (char*)(*((int*)args_refs[1]));
+				unsigned arg_size = *((unsigned*)args_refs[2]);
+
+				if(arg_fd == 1){
+					//write operation is invalid in read syscall
+					f->eax = -1;
+				}
+				else if(arg_fd == 0){
+					//standard input read
+					f->eax = input_getc();
+				}
+				else{
+
+				}
+			}
 			break;
 
 		case SYS_WRITE:
@@ -82,7 +101,12 @@ syscall_handler (struct intr_frame *f UNUSED)
 				char* arg_buf = (char*)(*((int*)args_refs[1]));
 				unsigned arg_size = *((unsigned*)args_refs[2]);
 	  			//printf("fd - %d \n buf - %s \nsize - %d\n", arg_fd, arg_buf, arg_size);
-	  			if(arg_fd == 1){
+
+	  			if(arg_fd == 0){
+	  				// read operation is invalid in write syscall
+	  				f->eax = -1;
+	  			}
+	  			else if(arg_fd == 1){
 	  				//console write
 	  				if(arg_size > STDOUT_LIMIT){
 	  					putbuf(arg_buf, STDOUT_LIMIT);
