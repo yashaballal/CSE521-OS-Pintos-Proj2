@@ -8,6 +8,7 @@
 #include "devices/shutdown.h"
 #include "filesys/file.h"
 #include "devices/input.h"
+#include "threads/malloc.h"
 
 #define MAX_ARGS_COUNT 3
 #define STDOUT_LIMIT 100    // setting a limit of bytes to be written
@@ -78,7 +79,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 				}
 
 				lock_acquire(&file_lock);
-				struct file *f = filesys_open(arg_fileName);
+				struct file *opened_file = filesys_open(arg_fileName);
 				lock_release(&file_lock);
 
 				if(f == NULL){
@@ -91,7 +92,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 				struct file_descriptor fdesc = (struct file_descriptor *) malloc(sizeof(struct file_descriptor));
 				fdesc->fd = cur->fd_counter;
 				(cur->fd_counter)++;
-				fdesc->fdesc_file = f;
+				fdesc->fdesc_file = opened_file;
 				fdesc->fdesc_fd_buf = NULL;    // nothing in buffer when the file is opened
 				list_push_back(&cur->fd_list, &fdesc->fdesc_elem);
 				f->eax = fdesc->fd;
