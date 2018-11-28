@@ -4,6 +4,7 @@
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 #include "devices/shutdown.h"
+#include "threads/vaddr.h"
 
 #define WORD_SIZE sizeof(void *)
 #define MAX_ARGS_COUNT 3
