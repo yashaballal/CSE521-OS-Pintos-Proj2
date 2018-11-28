@@ -41,11 +41,11 @@ syscall_handler (struct intr_frame *f UNUSED)
 		case SYS_EXIT:
 		{
 			/*The argument to exit is an integer pointer*/
-			if(!(is_user_vaddr(args_refs[0])))
+			/*if(!(is_user_vaddr(args_refs[0])))
 			{
 				thread_current()->exec_status = -1;
 				break;
-			}
+			}*/
 			int status = *((int *) args_refs[0]);
 	        thread_current()->exec_status = status;
 	        printf("%s: exit(%d)\n", thread_current()->name, status);
@@ -65,16 +65,17 @@ syscall_handler (struct intr_frame *f UNUSED)
 			break;
 
 		case SYS_OPEN:
-		      struct fd *file_desc = (struct fd *) malloc(sizeof(struct fd));
+		{
+		      struct file_descriptor *fdesc = (struct file_descriptor *) malloc(sizeof(struct file_descriptor));
 		      char *file_name = *((char **) args_refs[0]);
-  			  if(file_name == NULL)
+  			  /*if(file_name == NULL)
     		  {
     		  	/*To notify that the thread has failed to the parent process*/
     		  	 thread_current()->exec_status = -1;
     		  	 /* Pintos system call handler returns a value to the user program by 
     		  	 modifying the eax register*/
-    		  	 f->eax = -1;
-    		  }	
+    		  	 //f->eax = -1;
+    		  //}	
 
   			  lock_acquire(&filesys_lock);
   			  struct file *file_n = filesys_open(file_name);
@@ -88,13 +89,13 @@ syscall_handler (struct intr_frame *f UNUSED)
   			  }
 
   			  /*Need to maintain a list of the files opened by the thread*/	
-  			  file_desc->fd = thread_current()->fd_counter;
+  			  fdesc->fd = thread_current()->fd_counter;
   			  thread_current()->fd_counter++;
   			  file_desc->f = file_n;
-  			  list_push_back(&thread_current()->fd_list, file_desc->fd_elem);
-  			  f->eax = file_desc->fd;
+  			  list_push_back(&thread_current()->fd_list, fdesc->fd_elem);
+  			  f->eax = fdesc->fd;
   			break;
-
+        }
 		case SYS_FILESIZE:
 			break;
 
@@ -128,8 +129,11 @@ syscall_handler (struct intr_frame *f UNUSED)
 
 	}
 
-	if(thread_current()->exec_status == -1 )
+	/*if(thread_current()->exec_status == -1 )
+	{
+		f->eax = -1;
 		thread_exit();
+	}*/
 
   // printf ("system call!\n");
   // thread_exit ();
