@@ -70,7 +70,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 				int arg_fd = *((int*)args_refs[0]);
 				char* arg_buf = (char*)(*((int*)args_refs[1]));
 				unsigned arg_size = *((unsigned*)args_refs[2]);
-	  			//printf("fd - %d \n buf - %s \nsize - %d\n", fd, buf, size);
+	  			//printf("fd - %d \n buf - %s \nsize - %d\n", arg_fd, arg_buf, arg_size);
 	  			if(arg_fd == 1){
 	  				//console write
 	  				if(arg_size > STDOUT_LIMIT){
@@ -86,8 +86,8 @@ syscall_handler (struct intr_frame *f UNUSED)
 				else{
 					//child-parent buffer write
 					f->eax = 0;
-					struct list_elem elem;
-					struct list fdesc_list = thread_current()->fd_list;
+					struct list_elem *elem;
+					struct list *fdesc_list = thread_current()->fd_list;
 					for(elem = list_begin(fdesc_list); elem != list_end(fdesc_list); elem = list_next(elem)){
 						struct file_descriptor *fdesc = list_entry(elem, struct file_descriptor, fdesc_elem);
 						if(fdesc->fd == arg_fd){

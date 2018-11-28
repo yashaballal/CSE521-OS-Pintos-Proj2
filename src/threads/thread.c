@@ -102,6 +102,7 @@ thread_init (void)
 
   #ifdef USERPROG
   list_init(&thread_current()->child_list);
+  list_init(&thread_current()->fd_list);
   cond_init(&thread_current()->child_cond);
   lock_init(&thread_current()->child_lock);
   #endif
