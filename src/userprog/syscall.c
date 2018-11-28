@@ -33,8 +33,8 @@ syscall_handler (struct intr_frame *f UNUSED)
 
     if(!(is_user_vaddr(f->esp)) || pagedir_get_page(thread_current()->pagedir, f->esp) == NULL)
 	{
-		thread_current()->exec_status = status;
-        printf("%s: exit(%d)\n", thread_current()->name, thread_curremt()->exec_status);
+		thread_current()->exec_status = -1;
+        printf("%s: exit(%d)\n", thread_current()->name, thread_current()->exec_status);
         thread_exit();
 	}
 	
