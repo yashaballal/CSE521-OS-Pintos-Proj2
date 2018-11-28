@@ -3,6 +3,11 @@
 
 #define MAX_BUF_SIZE 100
 
+#include <list.h>
+
+#include "threads/synch.h"
+#include "filesys/file.h"
+
 void syscall_init (void);
 
 struct file_descriptor{

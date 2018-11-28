@@ -73,7 +73,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 	  			//printf("fd - %d \n buf - %s \nsize - %d\n", fd, buf, size);
 	  			if(arg_fd == 1){
 	  				//console write
-	  				if(size > STDOUT_LIMIT){
+	  				if(arg_size > STDOUT_LIMIT){
 	  					putbuf(arg_buf, STDOUT_LIMIT);
 						f->eax = STDOUT_LIMIT;
 	  				}
