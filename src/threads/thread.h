@@ -102,7 +102,7 @@ struct thread
     struct lock child_lock;    // lock used to synchronize forking and waiting for child thread
     struct condition child_cond;    // condition used to synchronize forking and waiting for child thread
     bool child_ready;    // flag to check if the child is in ready status
-    int fd_counter;    // counter to set identifiers for newly created file descriptors
+    int  fd_counter;    // counter to set identifiers for newly created file descriptors
     struct list fd_list;    // list of file descriptors held by the thread
     struct list child_list;    // list storing all the child processes
     int exec_status; //Used to maintain status if the exec system call was successful  

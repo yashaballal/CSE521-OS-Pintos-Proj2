@@ -109,8 +109,7 @@ thread_init (void)
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
-   Also creates the idle thread. */
-void
+   Also creates the idle thread. void
 thread_start (void) 
 {
   /* Create the idle thread. */
@@ -207,6 +206,8 @@ thread_create (const char *name, int priority,
   sf->ebp = 0;
 
   #ifdef USERPROG
+  /*Since the file descriptor 1 and 2 is reserved for read and write, count will start from 3*/
+  t->fd_counter = 2;
   t->parent = thread_current();
   #endif
   /* Add to run queue. */
