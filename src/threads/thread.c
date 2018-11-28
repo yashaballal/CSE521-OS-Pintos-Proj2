@@ -109,7 +109,8 @@ thread_init (void)
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
-   Also creates the idle thread. void
+   Also creates the idle thread.*/ 
+void
 thread_start (void) 
 {
   /* Create the idle thread. */
