@@ -7,6 +7,7 @@
 #include "devices/shutdown.h"
 #include "threads/vaddr.h"
 #include "threads/synch.h"
+#include "threads/malloc.h"
 
 #define WORD_SIZE sizeof(void *)
 #define MAX_ARGS_COUNT 3
@@ -64,7 +65,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 			break;
 
 		case SYS_OPEN:
-		      struct fd *file_desc = (struct fd *) malloc(sizeof(fd));
+		      struct fd *file_desc = (struct fd *) malloc(sizeof(struct fd));
 		      char *file_name = *((char **) args_refs[0]);
   			  if(file_name == NULL)
     		  {
