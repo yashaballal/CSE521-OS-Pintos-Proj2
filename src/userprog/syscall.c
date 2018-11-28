@@ -20,7 +20,7 @@ void
 syscall_init (void) 
 {
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
-  list_init(&file_lock);
+  lock_init(&file_lock);
 }
 
 static void
@@ -72,7 +72,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 		case SYS_OPEN:
 			{
 				char* arg_fileName = *((char *)args_refs[0]);
-				printf("LC: File name : %s\n",arg_fileName);
+				//printf("LC: File name : %s\n",arg_fileName);
 				if(arg_fileName == NULL){
 					printf("LC : File name is null\n");
 					f->eax = -1;
@@ -90,7 +90,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 				}
 
 				struct thread *cur = thread_current();
-				struct file_descriptor *fdesc = (struct file_descriptor *) malloc(sizeof(struct file_descriptor));
+				struct file_descriptor *fdesc = malloc(sizeof(struct file_descriptor));
 				fdesc->fd = cur->fd_counter;
 				(cur->fd_counter)++;
 				fdesc->fdesc_file = opened_file;
