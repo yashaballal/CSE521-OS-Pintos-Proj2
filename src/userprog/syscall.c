@@ -56,7 +56,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 				unsigned arg_size = *((unsigned*)args_refs[1]);
 
 				lock_acquire(&file_lock);
-				f->eax = filesys_create(arg_fileName, initial_size);
+				f->eax = filesys_create(arg_fileName, arg_size);
 				lock_release(&file_lock);
 
 			}
