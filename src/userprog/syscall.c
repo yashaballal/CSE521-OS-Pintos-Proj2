@@ -97,13 +97,13 @@ syscall_handler (struct intr_frame *f UNUSED)
 							else{
 								//if the buffer contains data
 								int i = 0;
-								lock_acquire(&fdesc->fd_buf->fd_buffer_lock);
-								while (i < size && fdesc->fd_buf->buf_end != MAX_BUF_SIZE) {
-						          fdesc->fd_buf->fd_buf[fdesc->fd_buf->buf_end] = arg_buf[i];
-						          fdesc->fd_buf->buf_end++;
+								lock_acquire(&fdesc->fdesc_fd_buf->fdesc_fd_buffer_lock);
+								while (i < arg_size && fdesc->fdesc_fd_buf->buf_end != MAX_BUF_SIZE) {
+						          fdesc->fdesc_fd_buf->fdesc_fd_buf[fdesc->fdesc_fd_buf->buf_end] = arg_buf[i];
+						          fdesc->fdesc_fd_buf->buf_end++;
 						          i++;
 						        }
-								lock_release(&fdesc->fd_buf->fd_buffer_lock);
+								lock_release(&fdesc->fdesc_fd_buf->fdesc_fd_buffer_lock);
 								f->eax = i;
 							}
 							break;    // break the for loop
