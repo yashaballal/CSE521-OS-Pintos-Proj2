@@ -6,6 +6,7 @@
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 #include "devices/shutdown.h"
+#include "filesys/filesys.h"
 #include "filesys/file.h"
 #include "devices/input.h"
 #include "threads/malloc.h"
@@ -55,7 +56,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 
 		case SYS_CREATE:
 			{
-				char* arg_fileName = *((int*)args_refs[0]);
+				char* arg_fileName = *((char *)args_refs[0]);
 				unsigned arg_size = *((unsigned*)args_refs[1]);
 
 				lock_acquire(&file_lock);
@@ -70,7 +71,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 
 		case SYS_OPEN:
 			{
-				char* arg_fileName = *((int*)args_refs[0]);
+				char* arg_fileName = *((char *)args_refs[0]);
 				printf("LC: File name : %s\n",arg_fileName);
 				if(arg_fileName == NULL){
 					printf("LC : File name is null\n");
@@ -89,7 +90,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 				}
 
 				struct thread *cur = thread_current();
-				struct file_descriptor fdesc = (struct file_descriptor *) malloc(sizeof(struct file_descriptor));
+				struct file_descriptor *fdesc = (struct file_descriptor *) malloc(sizeof(struct file_descriptor));
 				fdesc->fd = cur->fd_counter;
 				(cur->fd_counter)++;
 				fdesc->fdesc_file = opened_file;
