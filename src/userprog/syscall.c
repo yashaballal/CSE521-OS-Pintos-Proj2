@@ -91,19 +91,19 @@ syscall_handler (struct intr_frame *f UNUSED)
 					for(elem = list_begin(fdesc_list); elem != list_end(fdesc_list); elem = list_next(elem)){
 						struct file_descriptor *fdesc = list_entry(elem, struct file_descriptor, fdesc_elem);
 						if(fdesc->fd == arg_fd){
-							if(fdesc->buf == NULL && !(fdesc->fdesc_file->deny_write)){
+							if(fdesc->fdesc_fd_buf == NULL && !(fdesc->fdesc_file->deny_write)){
 								f->eax = file_write(fdesc->fdesc_file, arg_buf, arg_size);
 							}
 							else{
 								//if the buffer contains data
 								int i = 0;
-								lock_acquire(&fdesc->fdesc_fd_buf->fdesc_fd_buffer_lock);
+								lock_acquire(&fdesc->fdesc_fd_buf->fd_buffer_lock);
 								while (i < arg_size && fdesc->fdesc_fd_buf->buf_end != MAX_BUF_SIZE) {
-						          fdesc->fdesc_fd_buf->fdesc_fd_buf[fdesc->fdesc_fd_buf->buf_end] = arg_buf[i];
+						          fdesc->fdesc_fd_buf->fd_buffer[fdesc->fdesc_fd_buf->buf_end] = arg_buf[i];
 						          fdesc->fdesc_fd_buf->buf_end++;
 						          i++;
 						        }
-								lock_release(&fdesc->fdesc_fd_buf->fdesc_fd_buffer_lock);
+								lock_release(&fdesc->fdesc_fd_buf->fd_buffer_lock);
 								f->eax = i;
 							}
 							break;    // break the for loop
