@@ -56,7 +56,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 
 		case SYS_CREATE:
 			{
-				char* arg_fileName = *((char *)args_refs[0]);
+				char* arg_fileName = *((char **)args_refs[0]);
 				unsigned arg_size = *((unsigned*)args_refs[1]);
 
 				if(arg_fileName == NULL){
