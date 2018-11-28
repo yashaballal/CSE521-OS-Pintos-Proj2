@@ -71,7 +71,7 @@ syscall_handler (struct intr_frame *f UNUSED)
   			  /*if(file_name == NULL)
     		  {
     		  	/*To notify that the thread has failed to the parent process*/
-    		  	 thread_current()->exec_status = -1;
+    		  	 //thread_current()->exec_status = -1;
     		  	 /* Pintos system call handler returns a value to the user program by 
     		  	 modifying the eax register*/
     		  	 //f->eax = -1;
@@ -91,8 +91,8 @@ syscall_handler (struct intr_frame *f UNUSED)
   			  /*Need to maintain a list of the files opened by the thread*/	
   			  fdesc->fd = thread_current()->fd_counter;
   			  thread_current()->fd_counter++;
-  			  file_desc->f = file_n;
-  			  list_push_back(&thread_current()->fd_list, fdesc->fd_elem);
+  			  fdesc->f = file_n;
+  			  list_push_back(&thread_current()->fd_list, &fdesc->fd_elem);
   			  f->eax = fdesc->fd;
   			break;
         }
