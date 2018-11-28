@@ -91,8 +91,8 @@ syscall_handler (struct intr_frame *f UNUSED)
 					for(elem = list_begin(fdesc_list); elem != list_end(fdesc_list); elem = list_next(elem)){
 						struct file_descriptor *fdesc = list_entry(elem, struct file_descriptor, fdesc_elem);
 						if(fdesc->fd == arg_fd){
-							if(fdesc->buf == NULL && !(fdesc->file->deny_write)){
-								f->eax = file_write(file_desc->f, buf, size);
+							if(fdesc->buf == NULL && !(fdesc->fdesc_file->deny_write)){
+								f->eax = file_write(fdesc->fdesc_file, arg_buf, arg_size);
 							}
 							else{
 								//if the buffer contains data
