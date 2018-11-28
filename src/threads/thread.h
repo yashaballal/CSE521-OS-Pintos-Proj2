@@ -113,6 +113,7 @@ struct thread
     unsigned magic;                     /* Detects stack overflow. */
   };
 
+
 struct tchild_status{
    tid_t thread_id;
    struct list_elem child_elem;    /* list_elem to trace the child the parent thread is waiting on */

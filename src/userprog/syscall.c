@@ -67,13 +67,8 @@ syscall_handler (struct intr_frame *f UNUSED)
 
 		case SYS_OPEN:
 		{
-                      printf("Line 1");
-		      struct file_descriptor *fdesc = (struct file_descriptor *) malloc(sizeof(struct file_descriptor));
-			printf("Line 2");
-		      char *file_name = *((char **) args_refs[0]);
-			printf("Line 3");
-                      printf("%s\n", file_name);
-
+            struct file_descriptor *fdesc = (struct file_descriptor *) malloc(sizeof(struct file_descriptor));
+			char *file_name = *((char **) args_refs[0]);
   			/*if(file_name == NULL)
     		        {
     		  	  To notify that the thread has failed to the parent process
@@ -98,10 +93,12 @@ syscall_handler (struct intr_frame *f UNUSED)
   			  fdesc->fd = thread_current()->fd_counter;
   			  thread_current()->fd_counter++;
   			  fdesc->file = file_n;
+  			  printf("Came till here");
   			  list_push_back(&thread_current()->fd_list, &fdesc->fd_elem);
+  			  printf("The next line" );
   			  f->eax = fdesc->fd;
   			break;
-                }
+        }
 		case SYS_FILESIZE:
 			break;
 
