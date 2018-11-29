@@ -100,13 +100,6 @@ thread_init (void)
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
 
-  #ifdef USERPROG
-  list_init(&thread_current()->child_list);
-  list_init(&thread_current()->fd_list);
-  cond_init(&thread_current()->child_cond);
-  lock_init(&thread_current()->child_lock);
-  #endif
-
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -479,6 +472,14 @@ init_thread (struct thread *t, const char *name, int priority)
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);
   intr_set_level (old_level);
+
+  #ifdef USERPROG
+  list_init(&t->child_list);
+  list_init(&t->fd_list);
+  cond_init(&t->child_cond);
+  lock_init(&t->child_lock);
+  t->fd_counter = 3;
+  #endif
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and
