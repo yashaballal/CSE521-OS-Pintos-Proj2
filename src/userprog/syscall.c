@@ -16,7 +16,6 @@
 #define STDOUT_LIMIT 100    // setting a limit of bytes to be written
 
 static void syscall_handler (struct intr_frame *);
-static void system_exit(int status);
 
 void
 syscall_init (void) 
@@ -301,7 +300,7 @@ syscall_handler (struct intr_frame *f UNUSED)
   // thread_exit ();
 }
 
-static void system_exit(int exit_status){
+void system_exit(int exit_status){
     //printf("LC: Inside system_exit()\n");
     //printf("status = %d\n",exit_status);
     thread_current()->exec_status = exit_status;

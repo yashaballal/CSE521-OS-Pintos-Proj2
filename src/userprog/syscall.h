@@ -26,5 +26,5 @@ struct fd_buf{
     int buf_start, buf_end;    		// start and end indexes to fd_buffer array
 };
 
-
+void system_exit(int exit_status);
 #endif /* userprog/syscall.h */
