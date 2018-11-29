@@ -143,9 +143,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 				struct thread *curr_thread = thread_current();
 
 				struct list_elem *e;
-
 				for(e=list_begin(&curr_thread->fd_list);e!=list_end(&curr_thread->fd_list);e=list_next(e))
-
 					{
 						struct file_descriptor *f_curr = list_entry(e, struct file_descriptor,fdesc_elem);
 
@@ -194,7 +192,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 							struct file_descriptor *fdesc = list_entry(elem, struct file_descriptor, fdesc_elem);
 							if(fdesc->fd == arg_fd){
 								if(fdesc->fdesc_fd_buf == NULL && !(fdesc->fdesc_file->deny_write)){
-									f->eax = file_write(fdesc->fdesc_file, arg_buf, arg_size);
+									f->eax = file_read(fdesc->fdesc_file, arg_buf, arg_size);
 								}
 								else{
 									//if the buffer contains data
