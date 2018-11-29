@@ -33,8 +33,11 @@ syscall_handler (struct intr_frame *f UNUSED)
 	int syscall_num = *stack_pointer;
 	void *args_refs[MAX_ARGS_COUNT];
 
+    //printf("f->esp : %s    valid?:%d\n",f->esp, is_user_vaddr(f->esp));
+
     if(!(is_user_vaddr(f->esp)) || pagedir_get_page(thread_current()->pagedir, f->esp) == NULL)
 	{
+		printf("LC: Found an invalid stack pointer\n");
 		f->eax = -1;
 		system_exit(-1);
 	}
@@ -51,7 +54,11 @@ syscall_handler (struct intr_frame *f UNUSED)
 
 		case SYS_EXIT:
 		{
+			//printf("Enter sys exit\n");
 			int status = *((int *) args_refs[0]);
+			if(status < -1){
+				status = -1;
+			}
 			system_exit(status);
 			break;
 		}
