@@ -51,8 +51,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 
 		case SYS_EXIT:
 		{
-			int status = *((int *) args_refs[0]);
-			system_exit(status);
+			system_exit(-1);
 			break;
 		}
 		case SYS_EXEC:
