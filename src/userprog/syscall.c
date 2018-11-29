@@ -13,7 +13,7 @@
 #include "threads/vaddr.h"
 
 #define MAX_ARGS_COUNT 3
-#define STDOUT_LIMIT 100    // setting a limit of bytes to be written
+#define STDOUT_LIMIT 100    // setting an arbitrary limit of bytes to be written
 
 static void syscall_handler (struct intr_frame *);
 
@@ -187,7 +187,31 @@ syscall_handler (struct intr_frame *f UNUSED)
 						f->eax = input_getc();
 					}
 					else{
-
+						// file read
+						struct list_elem *elem;
+						struct thread *cur = thread_current();
+						for(elem = list_begin(&cur->fd_list); elem != list_end(&cur->fd_list); elem = list_next(elem)){
+							struct file_descriptor *fdesc = list_entry(elem, struct file_descriptor, fdesc_elem);
+							if(fdesc->fd == arg_fd){
+								if(fdesc->fdesc_fd_buf == NULL && !(fdesc->fdesc_file->deny_write)){
+									f->eax = file_write(fdesc->fdesc_file, arg_buf, arg_size);
+								}
+								else{
+									//if the buffer contains data
+									int i = 0;
+									lock_acquire(&fdesc->fdesc_fd_buf->fd_buffer_lock);
+									while (i < arg_size && fdesc->fdesc_fd_buf->buf_end != fdesc->fdesc_fd_buf->buf_start) {
+							          arg_buf[i] = fdesc->fdesc_fd_buf->fd_buffer[fdesc->fdesc_fd_buf->buf_start];
+							          fdesc->fdesc_fd_buf->buf_start++;
+							          i++;
+							        }
+									lock_release(&fdesc->fdesc_fd_buf->fd_buffer_lock);
+									f->eax = i;
+								}
+								break;    // break the for loop
+							}
+						}
+						f->eax = -1;    //the file descriptor was not found in the fd_list
 					}
 				}
 			}
@@ -211,7 +235,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 		  				f->eax = -1;
 		  			}
 		  			else if(arg_fd == 1){
-		  				//console write
+		  				// console write
 		  				if(arg_size > STDOUT_LIMIT){
 		  					putbuf(arg_buf, STDOUT_LIMIT);
 							f->eax = STDOUT_LIMIT;
@@ -220,11 +244,9 @@ syscall_handler (struct intr_frame *f UNUSED)
 		  					putbuf(arg_buf, arg_size);
 		  					f->eax = arg_size;
 		  				}
-						
 					}
 					else{
-						//child-parent buffer write
-						f->eax = 0;
+						// file write
 						struct list_elem *elem;
 						struct thread *cur = thread_current();
 						for(elem = list_begin(&cur->fd_list); elem != list_end(&cur->fd_list); elem = list_next(elem)){
@@ -248,6 +270,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 								break;    // break the for loop
 							}
 						}
+						f->eax = -1;    //the file descriptor was not found in the fd_list
 					}
 				}
 			}
@@ -284,25 +307,45 @@ syscall_handler (struct intr_frame *f UNUSED)
 
 					{
 						struct file_descriptor *f_curr = list_entry(e, struct file_descriptor,fdesc_elem);
-
 						if(f_curr->fd==f_desc)
+						{
+							if(f_curr->fdesc_fd_buf==NULL)
 
-							{
-								if(f_curr->fdesc_fd_buf==NULL)
-
-									f->eax = f_curr->fdesc_file->pos;
-							break;
-
-							}						
-
+								f->eax = f_curr->fdesc_file->pos;
+						break;
+						}						
 					}
-
-			f->eax = -1;
+				f->eax = -1;
 			}
 
 			break;
 
 		case SYS_CLOSE:
+			{
+				int f_desc = *((int *)args_refs[0]);
+
+				struct thread *curr_thread = thread_current();
+
+				struct list_elem *e;
+
+				for(e=list_begin(&curr_thread->fd_list);e!=list_end(&curr_thread->fd_list);e=list_next(e))
+
+					{
+						struct file_descriptor *f_curr = list_entry(e, struct file_descriptor,fdesc_elem);
+
+						if(f_curr->fd==f_desc)
+
+							{
+								list_remove(e);
+								if(f_curr->fdesc_fd_buf==NULL)
+									{
+										file_close(f_curr->fdesc_file);
+									}
+							}
+						free(f_curr);
+						break;
+					}
+			}
 			break;
 
 
@@ -324,3 +367,5 @@ void system_exit(int exit_status){
     printf("%s: exit(%d)\n", thread_current()->name, exit_status);
     thread_exit();
 }
+
+
