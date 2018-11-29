@@ -209,13 +209,13 @@ syscall_handler (struct intr_frame *f UNUSED)
 			printf("LC: SYSCALL did not match any of the cases\n");
 			break;
 	}
-
-	static void system_exit(void *exit_args[MAX_ARGS_COUNT]){
-		int status = *((int *) exit_args[0]);
-	    thread_current()->exec_status = status;
-	    printf("%s: exit(%d)\n", thread_current()->name, status);
-		thread_exit();
-	}
   // printf ("system call!\n");
   // thread_exit ();
+}
+
+static void system_exit(void *exit_args[MAX_ARGS_COUNT]){
+	int status = *((int *) exit_args[0]);
+    thread_current()->exec_status = status;
+    printf("%s: exit(%d)\n", thread_current()->name, status);
+	thread_exit();
 }
