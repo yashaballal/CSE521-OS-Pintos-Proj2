@@ -91,12 +91,12 @@ syscall_handler (struct intr_frame *f UNUSED)
 
 		case SYS_OPEN:
 			{
-				char* arg_fileName = *((char *)args_refs[0]);
+				char* arg_fileName = *((char **)args_refs[0]);
 				//printf("LC: File name : %s\n",arg_fileName);
 				if(arg_fileName == NULL){
 					//printf("LC : File name is null\n");
 					f->eax = -1;
-					break;
+					system_exit(-1);
 				}
 
 				lock_acquire(&file_lock);
@@ -104,9 +104,9 @@ syscall_handler (struct intr_frame *f UNUSED)
 				lock_release(&file_lock);
 
 				if(f == NULL){
-					printf("LC: There was an error in opening the file");
+					//printf("LC: There was an error in opening the file");
 					f->eax = -1;
-					break;
+					system_exit(-1);
 				}
 
 				struct thread *cur = thread_current();
@@ -115,7 +115,9 @@ syscall_handler (struct intr_frame *f UNUSED)
 				(cur->fd_counter)++;
 				fdesc->fdesc_file = opened_file;
 				fdesc->fdesc_fd_buf = NULL;    // nothing in buffer when the file is opened
+				//printf("LC: Before push\n");
 				list_push_back(&cur->fd_list, &fdesc->fdesc_elem);
+				//printf("LC: After push\n");
 				f->eax = fdesc->fd;
 			}	
 			break;
