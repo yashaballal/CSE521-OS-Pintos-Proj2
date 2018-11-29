@@ -115,6 +115,33 @@ syscall_handler (struct intr_frame *f UNUSED)
 			
 
 		case SYS_FILESIZE:
+			{
+				int f_desc = *((int*)args_refs[0]);
+
+				struct thread *curr_thread = thread_current();
+
+				struct list_elem *e;
+
+				for(e=list_begin(&curr_thread->fd_list);e!=list_end(&curr_thread->fd_list);e=list_next(e))
+
+					{
+						struct file_descriptor *f_curr = list_entry(e, struct file_descriptor,fdesc_elem);
+
+						if(f_curr->fd==f_desc)
+
+							{
+								if(f_curr->fdesc_fd_buf==NULL)
+
+									f->eax = file_length(f_curr->fdesc_file);
+							break;
+
+							}						
+
+					}
+
+			f->eax = 0;
+			}
+
 			break;
 
 		case SYS_READ:
@@ -205,9 +232,52 @@ syscall_handler (struct intr_frame *f UNUSED)
 			break;
 
 		case SYS_SEEK:
+			{
+				int f_desc = *((int *)args_refs[0]);
+				unsigned new_pos = *((unsigned *) args_refs[1]);
+
+				struct thread *curr_thread = thread_current();
+				struct list_elem *e;
+				for(e=list_begin(&curr_thread->fd_list);e!=list_end(&curr_thread->fd_list);e=list_next(e))
+					{
+						struct file_descriptor *f_curr = list_entry(e, struct file_descriptor,fdesc_elem);
+						if(f_curr->fd==f_desc)
+							{
+								file_seek(f_curr->fdesc_file,new_pos);
+								return;
+							}
+					}
+			}
 			break;
 
 		case SYS_TELL:
+			{
+				int f_desc = *((int *)args_refs[0]);
+
+				struct thread *curr_thread = thread_current();
+
+				struct list_elem *e;
+
+				for(e=list_begin(&curr_thread->fd_list);e!=list_end(&curr_thread->fd_list);e=list_next(e))
+
+					{
+						struct file_descriptor *f_curr = list_entry(e, struct file_descriptor,fdesc_elem);
+
+						if(f_curr->fd==f_desc)
+
+							{
+								if(f_curr->fdesc_fd_buf==NULL)
+
+									f->eax = f_curr->fdesc_file->pos;
+							break;
+
+							}						
+
+					}
+
+			f->eax = -1;
+			}
+
 			break;
 
 		case SYS_CLOSE:
