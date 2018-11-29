@@ -53,15 +53,16 @@ syscall_handler (struct intr_frame *f UNUSED)
 			break;
 
 		case SYS_EXIT:
-		{
-			//printf("Enter sys exit\n");
-			int status = *((int *) args_refs[0]);
-			if(status < -1){
-				status = -1;
+			{
+				//printf("Enter sys exit\n");
+				int status = *((int *) args_refs[0]);
+				if(status < -1){
+					status = -1;
+				}
+				system_exit(status);
 			}
-			system_exit(status);
 			break;
-		}
+
 		case SYS_EXEC:
 			break;
 
@@ -87,6 +88,19 @@ syscall_handler (struct intr_frame *f UNUSED)
 			break;
 
 		case SYS_REMOVE:
+			{
+				char* arg_fileName = *((char **)args_refs[0]);
+
+				if(arg_fileName == NULL){
+					//printf("LC : File name is null\n");
+					f->eax = -1;
+					system_exit(-1);
+				}
+
+				lock_acquire(&file_lock);
+				f->eax = filesys_remove(arg_fileName);
+				lock_release(&file_lock);
+			}
 			break;
 
 		case SYS_OPEN:
@@ -294,7 +308,10 @@ syscall_handler (struct intr_frame *f UNUSED)
 
 
 		default:
+		{
 			printf("LC: SYSCALL did not match any of the cases\n");
+			system_exit(-1);
+		}
 			break;
 	}
   // printf ("system call!\n");
