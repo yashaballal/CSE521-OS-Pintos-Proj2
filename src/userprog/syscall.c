@@ -109,22 +109,22 @@ syscall_handler (struct intr_frame *f UNUSED)
 				if(arg_fileName == NULL){
 					//printf("LC : File name is null\n");
 					f->eax = -1;
-					system_exit(-1);
+					break;
 				}
 
 				lock_acquire(&file_lock);
 				struct file *opened_file = filesys_open(arg_fileName);
 				lock_release(&file_lock);
 
-				if(f == NULL){
+				if(opened_file == NULL){
 					//printf("LC: There was an error in opening the file");
 					f->eax = -1;
-					system_exit(-1);
+				        break;
 				}
 
 				struct thread *cur = thread_current();
 				struct file_descriptor *fdesc = malloc(sizeof(struct file_descriptor));
-				fdesc->fd = cur->fd_counter;
+                                fdesc->fd = cur->fd_counter;
 				(cur->fd_counter)++;
 				fdesc->fdesc_file = opened_file;
 				fdesc->fdesc_fd_buf = NULL;    // nothing in buffer when the file is opened
