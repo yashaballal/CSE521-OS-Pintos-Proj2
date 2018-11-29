@@ -290,6 +290,31 @@ syscall_handler (struct intr_frame *f UNUSED)
 			break;
 
 		case SYS_CLOSE:
+			{
+				int f_desc = *((int *)args_refs[0]);
+
+				struct thread *curr_thread = thread_current();
+
+				struct list_elem *e;
+
+				for(e=list_begin(&curr_thread->fd_list);e!=list_end(&curr_thread->fd_list);e=list_next(e))
+
+					{
+						struct file_descriptor *f_curr = list_entry(e, struct file_descriptor,fdesc_elem);
+
+						if(f_curr->fd==f_desc)
+
+							{
+								list_remove(e);
+								if(f_curr->fdesc_fd_buf==NULL)
+									{
+										file_close(f_curr->fdesc_file);
+									}
+							}
+						free(f_curr);
+						break;
+					}
+			}
 			break;
 
 
