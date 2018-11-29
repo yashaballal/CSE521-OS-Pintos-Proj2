@@ -124,16 +124,22 @@ syscall_handler (struct intr_frame *f UNUSED)
 				char* arg_buf = (char*)(*((int*)args_refs[1]));
 				unsigned arg_size = *((unsigned*)args_refs[2]);
 
-				if(arg_fd == 1){
-					//write operation is invalid in read syscall
+				if(!(is_user_vaddr(arg_buf))){
 					f->eax = -1;
-				}
-				else if(arg_fd == 0){
-					//standard input read
-					f->eax = input_getc();
+					system_exit(-1);
 				}
 				else{
+					if(arg_fd == 1){
+						//write operation is invalid in read syscall
+						f->eax = -1;
+					}
+					else if(arg_fd == 0){
+						//standard input read
+						f->eax = input_getc();
+					}
+					else{
 
+					}
 				}
 			}
 			break;
@@ -146,50 +152,54 @@ syscall_handler (struct intr_frame *f UNUSED)
 				unsigned arg_size = *((unsigned*)args_refs[2]);
 	  			//printf("fd - %d \n buf - %s \nsize - %d\n", arg_fd, arg_buf, arg_size);
 
-	  			if(arg_fd == 0){
-	  				// read operation is invalid in write syscall
-	  				f->eax = -1;
-	  			}
-	  			else if(arg_fd == 1){
-	  				//console write
-	  				if(arg_size > STDOUT_LIMIT){
-	  					putbuf(arg_buf, STDOUT_LIMIT);
-						f->eax = STDOUT_LIMIT;
-	  				}
-	  				else{
-	  					putbuf(arg_buf, arg_size);
-	  					f->eax = arg_size;
-	  				}
-					
+				if(!(is_user_vaddr(arg_buf))){
+					f->eax = -1;
+					system_exit(-1);
 				}
 				else{
-					//child-parent buffer write
-					f->eax = 0;
-					struct list_elem *elem;
-					struct thread *cur = thread_current();
-					for(elem = list_begin(&cur->fd_list); elem != list_end(&cur->fd_list); elem = list_next(elem)){
-						struct file_descriptor *fdesc = list_entry(elem, struct file_descriptor, fdesc_elem);
-						if(fdesc->fd == arg_fd){
-							if(fdesc->fdesc_fd_buf == NULL && !(fdesc->fdesc_file->deny_write)){
-								f->eax = file_write(fdesc->fdesc_file, arg_buf, arg_size);
+					if(arg_fd == 0){
+		  				// read operation is invalid in write syscall
+		  				f->eax = -1;
+		  			}
+		  			else if(arg_fd == 1){
+		  				//console write
+		  				if(arg_size > STDOUT_LIMIT){
+		  					putbuf(arg_buf, STDOUT_LIMIT);
+							f->eax = STDOUT_LIMIT;
+		  				}
+		  				else{
+		  					putbuf(arg_buf, arg_size);
+		  					f->eax = arg_size;
+		  				}
+						
+					}
+					else{
+						//child-parent buffer write
+						f->eax = 0;
+						struct list_elem *elem;
+						struct thread *cur = thread_current();
+						for(elem = list_begin(&cur->fd_list); elem != list_end(&cur->fd_list); elem = list_next(elem)){
+							struct file_descriptor *fdesc = list_entry(elem, struct file_descriptor, fdesc_elem);
+							if(fdesc->fd == arg_fd){
+								if(fdesc->fdesc_fd_buf == NULL && !(fdesc->fdesc_file->deny_write)){
+									f->eax = file_write(fdesc->fdesc_file, arg_buf, arg_size);
+								}
+								else{
+									//if the buffer contains data
+									int i = 0;
+									lock_acquire(&fdesc->fdesc_fd_buf->fd_buffer_lock);
+									while (i < arg_size && fdesc->fdesc_fd_buf->buf_end != MAX_BUF_SIZE) {
+							          fdesc->fdesc_fd_buf->fd_buffer[fdesc->fdesc_fd_buf->buf_end] = arg_buf[i];
+							          fdesc->fdesc_fd_buf->buf_end++;
+							          i++;
+							        }
+									lock_release(&fdesc->fdesc_fd_buf->fd_buffer_lock);
+									f->eax = i;
+								}
+								break;    // break the for loop
 							}
-							else{
-								//if the buffer contains data
-								int i = 0;
-								lock_acquire(&fdesc->fdesc_fd_buf->fd_buffer_lock);
-								while (i < arg_size && fdesc->fdesc_fd_buf->buf_end != MAX_BUF_SIZE) {
-						          fdesc->fdesc_fd_buf->fd_buffer[fdesc->fdesc_fd_buf->buf_end] = arg_buf[i];
-						          fdesc->fdesc_fd_buf->buf_end++;
-						          i++;
-						        }
-								lock_release(&fdesc->fdesc_fd_buf->fd_buffer_lock);
-								f->eax = i;
-							}
-							break;    // break the for loop
 						}
 					}
-					
-
 				}
 			}
 			break;
