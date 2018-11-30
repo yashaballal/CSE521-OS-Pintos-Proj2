@@ -180,6 +180,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 					}
 					else{
 						// file read
+						f->eax = -1;    //the file descriptor was not found in the fd_list
 						struct list_elem *elem;
 						struct thread *cur = thread_current();
 						for(elem = list_begin(&cur->fd_list); elem != list_end(&cur->fd_list); elem = list_next(elem)){
@@ -203,7 +204,6 @@ syscall_handler (struct intr_frame *f UNUSED)
 								break;    // break the for loop
 							}
 						}
-						f->eax = -1;    //the file descriptor was not found in the fd_list
 					}
 				}
 			}
@@ -239,6 +239,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 					}
 					else{
 						// file write
+						f->eax = -1;    //the file descriptor was not found in the fd_list
 						struct list_elem *elem;
 						struct thread *cur = thread_current();
 						for(elem = list_begin(&cur->fd_list); elem != list_end(&cur->fd_list); elem = list_next(elem)){
@@ -262,7 +263,6 @@ syscall_handler (struct intr_frame *f UNUSED)
 								break;    // break the for loop
 							}
 						}
-						f->eax = -1;    //the file descriptor was not found in the fd_list
 					}
 				}
 			}
