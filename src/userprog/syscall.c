@@ -63,9 +63,22 @@ syscall_handler (struct intr_frame *f UNUSED)
 			break;
 
 		case SYS_EXEC:
+			{
+				char* copy_var;
+				char* exec_prog = *((char **)args_refs[0]);
+
+				copy_var = malloc(strlen(exec_prog) + 1);
+				strlcpy(copy_var, exec_prog, PGSIZE);
+
+				f->eax = process_execute(copy_var);
+			}
 			break;
 
 		case SYS_WAIT:
+			{
+				int status = *((int *) args_refs[0]);
+				f->eax = process_wait(status);
+			}
 			break;
 
 		case SYS_CREATE:
@@ -155,7 +168,6 @@ syscall_handler (struct intr_frame *f UNUSED)
 					}						
 				}
 			}
-
 			break;
 
 		case SYS_READ:
@@ -359,5 +371,3 @@ void system_exit(int exit_status){
     printf("%s: exit(%d)\n", thread_current()->name, exit_status);
     thread_exit();
 }
-
-
