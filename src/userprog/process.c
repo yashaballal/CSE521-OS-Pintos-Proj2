@@ -17,6 +17,7 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 #include "threads/malloc.h"
+#include "userprog/syscall.h"
 
 
 #define WORD_SIZE sizeof(void *)
@@ -182,7 +183,18 @@ process_exit (void)
     }
     
 
-  file_close(thread_current()->self);
+  file_close(cur->cur_file);
+  struct list_elem *e;
+  while(!list_empty(&cur->fd_list))
+	{
+		e = list_pop_front(&cur->fd_list);
+
+		struct file_descriptor *fdesc = list_entry (e, struct file_descriptor, fdesc_elem);
+          
+	      	file_close(fdesc->fdesc_file);
+	      	list_remove(e);
+	      	free(fdesc);
+	}
 
   if(parent != NULL) {
     lock_acquire(&(parent->child_lock));

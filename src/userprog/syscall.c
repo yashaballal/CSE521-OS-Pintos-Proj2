@@ -277,7 +277,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 						for(elem = list_begin(&cur->fd_list); elem != list_end(&cur->fd_list); elem = list_next(elem)){
 							struct file_descriptor *fdesc = list_entry(elem, struct file_descriptor, fdesc_elem);
 							if(fdesc->fd == arg_fd){
-								if(fdesc->fdesc_fd_buf == NULL && !(fdesc->fdesc_file->deny_write)){
+								if(fdesc->fdesc_fd_buf == NULL){
 									f->eax = file_write(fdesc->fdesc_file, arg_buf, arg_size);
 								}
 								else{
