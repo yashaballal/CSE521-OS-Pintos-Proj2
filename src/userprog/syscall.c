@@ -207,7 +207,9 @@ syscall_handler (struct intr_frame *f UNUSED)
 					else if(arg_fd == 0)
 					{
 						//standard input read
-						f->eax = input_getc();
+   						for(int i=0;i<arg_size ;i++)
+							arg_buf[i] = input_getc();
+						f->eax = arg_size;
 					}
 					else{
 						// file read
@@ -220,15 +222,18 @@ syscall_handler (struct intr_frame *f UNUSED)
 							{
 								if(!(fdesc->fdesc_file->deny_write))
 								{
+									lock_acquire(&file_lock);
 									f->eax = file_read(fdesc->fdesc_file, arg_buf, arg_size);
+									lock_release(&file_lock);
 								}
+                                                                break;
 							}
-								break;    // break the for loop
+								//break;    // break the for loop
 							}
 						}
 					}
 				break;
-				}
+			}
 
 		case SYS_WRITE:
 			{
@@ -270,11 +275,13 @@ syscall_handler (struct intr_frame *f UNUSED)
 							{
 								if(!(fdesc->fdesc_file->deny_write))
 								{
+									lock_acquire(&file_lock);
 									f->eax = file_write(fdesc->fdesc_file, arg_buf, arg_size);
+									lock_release(&file_lock);
 								}
-								
+								 break;
 								}
-								break;    // break the for loop
+							//	break;    // break the for loop
 							}
 						}
 					}
