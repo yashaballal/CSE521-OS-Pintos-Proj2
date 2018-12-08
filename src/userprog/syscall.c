@@ -222,11 +222,11 @@ syscall_handler (struct intr_frame *f UNUSED)
 							{
 								if(!(fdesc->fdesc_file->deny_write))
 								{
-									lock_acquire(&file_lock);
+									acquire_filesys_lock();
 									f->eax = file_read(fdesc->fdesc_file, arg_buf, arg_size);
-									lock_release(&file_lock);
+									release_filesys_lock();
 								}
-                                                                break;
+                                      break;
 							}
 								//break;    // break the for loop
 							}
@@ -275,9 +275,9 @@ syscall_handler (struct intr_frame *f UNUSED)
 							{
 								if(!(fdesc->fdesc_file->deny_write))
 								{
-									lock_acquire(&file_lock);
+									acquire_filesys_lock();
 									f->eax = file_write(fdesc->fdesc_file, arg_buf, arg_size);
-									lock_release(&file_lock);
+									release_filesys_lock();
 								}
 								 break;
 								}

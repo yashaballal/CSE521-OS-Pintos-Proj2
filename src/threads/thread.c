@@ -39,6 +39,8 @@ static struct thread *initial_thread;
 static struct lock tid_lock;
 
 /* Stack frame for kernel_thread(). */
+static struct lock thread_file_lock;
+
 struct kernel_thread_frame 
   {
     void *eip;                  /* Return address. */
@@ -94,12 +96,24 @@ thread_init (void)
   list_init (&ready_list);
   list_init (&all_list);
 
+  lock_init(&thread_file_lock);
+
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
 
+}
+
+void acquire_filesys_lock()
+{
+  lock_acquire(&thread_file_lock);
+}
+
+void release_filesys_lock()
+{
+  lock_release(&thread_file_lock);
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
