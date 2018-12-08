@@ -204,10 +204,12 @@ thread_create (const char *name, int priority,
   /*Since the file descriptor 1,2 and 3 is reserved for std input,output and error count will start from 3*/
   t->fd_counter = 3;
   t->parent = thread_current();
+  t->running_code_file = NULL;
   list_init(&t->fd_list);
   list_init(&t->child_list);
   cond_init(&t->child_cond);
   lock_init(&t->child_lock);
+  memcpy(t->running_code_filename, &zero, 20);
   #endif
   /* Add to run queue. */
   thread_unblock (t);

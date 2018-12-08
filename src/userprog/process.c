@@ -161,8 +161,8 @@ static thread_action_func mark_dead;
 static void mark_dead(struct thread *child, void *args_ UNUSED) {
   struct thread *cur = thread_current();
 
-  if (child->parent_thread == cur) {
-    child->parent_thread = NULL;
+  if (child->parent == cur) {
+    child->parent = NULL;
   }
 }
 
@@ -232,7 +232,6 @@ process_exit (void)
     lock_release(&(parent->child_lock));
   }
 
-  mmt_destroy(&cur->mmt);
   pd = cur->pagedir;
   if (pd != NULL) 
     {
