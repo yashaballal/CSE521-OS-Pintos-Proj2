@@ -264,21 +264,22 @@ syscall_handler (struct intr_frame *f UNUSED)
 						f->eax = -1;    //the file descriptor was not found in the fd_list
 						struct list_elem *elem;
 						struct thread *cur = thread_current();
-						for(elem = list_begin(&cur->fd_list); elem != list_end(&cur->fd_list); elem = list_next(elem)){
+						for(elem = list_begin(&cur->fd_list); elem != list_end(&cur->fd_list); elem = list_next(elem))
+						{
 							struct file_descriptor *fdesc = list_entry(elem, struct file_descriptor, fdesc_elem);
-							if(fdesc->fd == arg_fd){
-								if(!(fdesc->fdesc_file->deny_write)){
+							if(fdesc->fd == arg_fd)
+							{
+								if(!(fdesc->fdesc_file->deny_write))
+								{
 									f->eax = file_write(fdesc->fdesc_file, arg_buf, arg_size);
 								}
 								
-								f->eax = i;
 								}
 								break;    // break the for loop
 							}
 						}
 					}
 				}
-			}
 			break;
 
 		case SYS_SEEK:
