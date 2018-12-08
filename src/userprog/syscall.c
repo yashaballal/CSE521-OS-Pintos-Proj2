@@ -207,7 +207,8 @@ syscall_handler (struct intr_frame *f UNUSED)
 						//write operation is invalid in read syscall
 						f->eax = -1;
 					}
-					else if(arg_fd == 0){
+					else if(arg_fd == 0)
+					{
 						//standard input read
 						f->eax = input_getc();
 					}
@@ -218,29 +219,21 @@ syscall_handler (struct intr_frame *f UNUSED)
 						struct thread *cur = thread_current();
 						for(elem = list_begin(&cur->fd_list); elem != list_end(&cur->fd_list); elem = list_next(elem)){
 							struct file_descriptor *fdesc = list_entry(elem, struct file_descriptor, fdesc_elem);
-							if(fdesc->fd == arg_fd){
-								if(fdesc->fdesc_fd_buf == NULL && !(fdesc->fdesc_file->deny_write)){
+							if(fdesc->fd == arg_fd)
+							{
+								if(fdesc->fdesc_fd_buf == NULL && !(fdesc->fdesc_file->deny_write))
+								{
 									f->eax = file_read(fdesc->fdesc_file, arg_buf, arg_size);
 								}
-								else{
-									//if the buffer contains data
-									int i = 0;
-									lock_acquire(&fdesc->fdesc_fd_buf->fd_buffer_lock);
-									while (i < arg_size && fdesc->fdesc_fd_buf->buf_end != fdesc->fdesc_fd_buf->buf_start) {
-							          arg_buf[i] = fdesc->fdesc_fd_buf->fd_buffer[fdesc->fdesc_fd_buf->buf_start];
-							          fdesc->fdesc_fd_buf->buf_start++;
-							          i++;
-							        }
-									lock_release(&fdesc->fdesc_fd_buf->fd_buffer_lock);
-									f->eax = i;
+								lock_release(&fdesc->fdesc_fd_buf->fd_buffer_lock);
+								f->eax = i;
 								}
 								break;    // break the for loop
 							}
 						}
 					}
+				break;
 				}
-			}
-			break;
 
 		case SYS_WRITE:
 			{
