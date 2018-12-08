@@ -209,6 +209,7 @@ thread_create (const char *name, int priority,
   list_init(&t->child_list);
   cond_init(&t->child_cond);
   lock_init(&t->child_lock);
+  int zero = 0;
   memcpy(t->running_code_filename, &zero, 20);
   #endif
   /* Add to run queue. */
