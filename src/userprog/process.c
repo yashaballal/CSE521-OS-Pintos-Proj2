@@ -181,6 +181,7 @@ void
 process_exit (void)
 {
   struct thread *cur = thread_current ();
+  //thread_foreach(&mark_dead, (void *) 0);
   uint32_t *pd;
   struct thread *parent = cur->parent;
 
@@ -368,7 +369,6 @@ load (struct args_passed *args_p, void (**eip) (void), void **esp)
       goto done; 
     }
 
-  file_deny_write(file);
   t->cur_file = file;
 
   /* Read and verify executable header. */
@@ -446,6 +446,9 @@ load (struct args_passed *args_p, void (**eip) (void), void **esp)
   /* Set up stack. */
   if (!setup_stack (args_p, esp))
     goto done;
+  
+  file_deny_write(file);
+
 
   //printf("Before for top = %s\n",top);
     /* Start address. */
