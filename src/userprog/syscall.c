@@ -64,13 +64,33 @@ syscall_handler (struct intr_frame *f UNUSED)
 
 		case SYS_EXEC:
 			{
+				//printf("LC : Inside exec \n");
 				char* copy_var;
 				char* exec_prog = *((char **)args_refs[0]);
+				//printf("LC: exec_prog : %s\n", exec_prog);
 
+				
 				copy_var = malloc(strlen(exec_prog) + 1);
 				strlcpy(copy_var, exec_prog, PGSIZE);
+				//printf("LC: Copy var created - %s\n",copy_var);
 
-				f->eax = process_execute(copy_var);
+				char* save_ptr;
+				copy_var = strtok_r(copy_var, " ", &save_ptr);
+				//printf("Token : %s\n", copy_var);
+				//printf("LC : Here");
+				
+				lock_acquire(&file_lock);
+				struct file *opened_file = filesys_open(copy_var);
+
+				if(opened_file == NULL){
+					//printf("LC: There was an error in opening the file");
+					f->eax = -1;
+				}
+				else{
+					file_close(opened_file);
+					f->eax = process_execute(exec_prog);
+				}
+				lock_release(&file_lock);
 			}
 			break;
 
