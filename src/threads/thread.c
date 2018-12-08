@@ -486,6 +486,7 @@ init_thread (struct thread *t, const char *name, int priority)
   list_init(&t->fd_list);
   cond_init(&t->child_cond);
   lock_init(&t->child_lock);
+  t->cur_file = NULL;
   t->fd_counter = 3;
   #endif
 }

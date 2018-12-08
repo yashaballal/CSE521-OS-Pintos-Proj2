@@ -214,8 +214,9 @@ process_exit (void)
     }
     
 
-   if(parent != NULL) 
-   {
+  file_close(thread_current()->cur_file);
+
+  if(parent != NULL) {
     lock_acquire(&(parent->child_lock));
     struct list_elem *e;
     for (e = list_begin(&parent->child_list); e != list_end(&parent->child_list); e = list_next(e))
@@ -367,6 +368,9 @@ load (struct args_passed *args_p, void (**eip) (void), void **esp)
       goto done; 
     }
 
+  file_deny_write(file);
+  t->cur_file = file;
+
   /* Read and verify executable header. */
   if (file_read (file, &ehdr, sizeof ehdr) != sizeof ehdr
       || memcmp (ehdr.e_ident, "\177ELF\1\1\1", 7)
@@ -451,7 +455,7 @@ load (struct args_passed *args_p, void (**eip) (void), void **esp)
 
  done:
   /* We arrive here whether the load is successful or not. */
-  file_close (file);
+  //file_close (file);
   return success;
 }
 
