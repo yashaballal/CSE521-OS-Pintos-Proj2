@@ -2,17 +2,6 @@
 #include <stdio.h>
 #include <list.h>
 #include <syscall-nr.h>
-<<<<<<< HEAD
-#include <list.h>
-#include "threads/interrupt.h"
-#include "threads/thread.h"
-#include "devices/shutdown.h"
-#include "threads/vaddr.h"
-#include "threads/synch.h"
-#include "threads/malloc.h"
-#include "filesys/filesys.h"
-=======
-
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 #include "devices/shutdown.h"
@@ -21,7 +10,6 @@
 #include "devices/input.h"
 #include "threads/malloc.h"
 #include "threads/vaddr.h"
->>>>>>> f6cb50f3184fcd82511ac573e09826fda682262f
 
 #define MAX_ARGS_COUNT 3
 #define STDOUT_LIMIT 100    // setting an arbitrary limit of bytes to be written
@@ -33,29 +21,12 @@ void
 syscall_init (void) 
 {
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
-<<<<<<< HEAD
-  lock_init(&filesys_lock);
-=======
   lock_init(&file_lock);
->>>>>>> f6cb50f3184fcd82511ac573e09826fda682262f
 }
 
 static void
 syscall_handler (struct intr_frame *f UNUSED) 
 {
-<<<<<<< HEAD
-	if(!(is_user_vaddr(f->esp)) || pagedir_get_page(thread_current()->pagedir, f->esp) == NULL)
-	{
-		thread_current()->exec_status = status;
-        printf("%s: exit(%d)\n", thread_current()->name, thread_curremt()->exec_status);
-        thread_exit();
-	}
-	
-	int* stack_pointer = f->esp;
-	int syscall_num = *stack_pointer;
-	void *args_refs[MAX_ARGS_COUNT];
-        printf("Reached the syscall handler");
-=======
 
 	int* stack_pointer = f->esp;
 	int syscall_num = *stack_pointer;
@@ -70,8 +41,8 @@ syscall_handler (struct intr_frame *f UNUSED)
 		system_exit(-1);
 	}
 	
->>>>>>> f6cb50f3184fcd82511ac573e09826fda682262f
-	for(int i=0; i<MAX_ARGS_COUNT; i++){
+	for(int i=0; i<MAX_ARGS_COUNT; i++)
+	{
 		args_refs[i] = stack_pointer + (i+1);
 	}
 	//printf("LC: Inside syscall handler - arguments captured\n");
@@ -82,19 +53,6 @@ syscall_handler (struct intr_frame *f UNUSED)
 			break;
 
 		case SYS_EXIT:
-<<<<<<< HEAD
-		{
-			/*The argument to exit is an integer pointer*/
-			/*if(!(is_user_vaddr(args_refs[0])))
-			{
-				thread_current()->exec_status = -1;
-				break;
-			}*/
-			int status = *((int *) args_refs[0]);
-	        thread_current()->exec_status = status;
-	        printf("%s: exit(%d)\n", thread_current()->name, status);
-		    thread_exit();
-=======
 			{
 				//printf("Enter sys exit\n");
 				int status = *((int *) args_refs[0]);
@@ -103,7 +61,6 @@ syscall_handler (struct intr_frame *f UNUSED)
 				}
 				system_exit(status);
 			}
->>>>>>> f6cb50f3184fcd82511ac573e09826fda682262f
 			break;
 
 		case SYS_EXEC:
@@ -416,20 +373,6 @@ syscall_handler (struct intr_frame *f UNUSED)
 			}
 			break;
 
-<<<<<<< HEAD
-
-	}
-
-	/*if(thread_current()->exec_status == -1 )
-	{
-		f->eax = -1;
-		thread_exit();
-	}*/
-
-  // printf ("system call!\n");
-  // thread_exit ();
-=======
-
 		default:
 		{
 			printf("LC: SYSCALL did not match any of the cases\n");
@@ -447,5 +390,4 @@ void system_exit(int exit_status){
     thread_current()->exec_status = exit_status;
     printf("%s: exit(%d)\n", thread_current()->name, exit_status);
     thread_exit();
->>>>>>> f6cb50f3184fcd82511ac573e09826fda682262f
 }
