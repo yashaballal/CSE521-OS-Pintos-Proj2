@@ -6,6 +6,10 @@
 #include <stdint.h>
 #include "threads/synch.h"
 #include "threads/interrupt.h"
+#ifdef USERPROG
+#include "userprog/process.h"
+#include "filesys/file.h"
+#endif
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -97,15 +101,16 @@ struct thread
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
-    struct thread *parent;    // pointer to parent thread
-    struct intr_frame i_f;    // Intr frame storing soft interrupt generated during a system call
-    struct lock child_lock;    // lock used to synchronize forking and waiting for child thread
+    struct thread *parent;          // pointer to parent thread
+    struct intr_frame i_f;          // Intr frame storing soft interrupt generated during a system call
+    struct lock child_lock;         // lock used to synchronize forking and waiting for child thread
     struct condition child_cond;    // condition used to synchronize forking and waiting for child thread
-    bool child_ready;    // flag to check if the child is in ready status
-    int fd_counter;    // counter to set identifiers for newly created file descriptors
-    struct list fd_list;    // list of file descriptors held by the thread
-    struct list child_list;    // list storing all the child processes
-    int exec_status; //Used to maintain status if the exec system call was successful  
+    bool child_ready;               // flag to check if the child is in ready status
+    int fd_counter;                 // counter to set identifiers for newly created file descriptors
+    struct list fd_list;            // list of file descriptors held by the thread
+    struct file cur_file;           // holds the current file the thread is working upon
+    struct list child_list;         // list storing all the child processes
+    int exec_status;                //Used to maintain status if the exec system call was successful  
     uint32_t *pagedir;                  /* Page directory. */
 #endif
 

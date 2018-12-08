@@ -182,7 +182,9 @@ process_exit (void)
     }
     
 
-   if(parent != NULL) {
+  file_close(thread_current()->self);
+
+  if(parent != NULL) {
     lock_acquire(&(parent->child_lock));
     struct list_elem *e;
     for (e = list_begin(&parent->child_list); e != list_end(&parent->child_list); e = list_next(e)) {
@@ -313,6 +315,9 @@ load (struct args_passed *args_p, void (**eip) (void), void **esp)
       printf ("load: %s: open failed\n", args_p->argv[0]);
       goto done; 
     }
+
+  file_deny_write(file);
+  t->cur_file = file;
 
   /* Read and verify executable header. */
   if (file_read (file, &ehdr, sizeof ehdr) != sizeof ehdr
