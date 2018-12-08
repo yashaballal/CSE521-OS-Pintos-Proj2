@@ -161,7 +161,6 @@ syscall_handler (struct intr_frame *f UNUSED)
                                 fdesc->fd = cur->fd_counter;
 				(cur->fd_counter)++;
 				fdesc->fdesc_file = opened_file;
-				fdesc->fdesc_fd_buf = NULL;    // nothing in buffer when the file is opened
 				//printf("LC: Before push\n");
 				list_push_back(&cur->fd_list, &fdesc->fdesc_elem);
 				//printf("LC: After push\n");
@@ -182,8 +181,6 @@ syscall_handler (struct intr_frame *f UNUSED)
 					struct file_descriptor *f_curr = list_entry(e, struct file_descriptor,fdesc_elem);
 					if(f_curr->fd==f_desc)
 					{
-						if(f_curr->fdesc_fd_buf==NULL)
-
 							f->eax = file_length(f_curr->fdesc_file);
 					break;
 					}						
@@ -221,11 +218,10 @@ syscall_handler (struct intr_frame *f UNUSED)
 							struct file_descriptor *fdesc = list_entry(elem, struct file_descriptor, fdesc_elem);
 							if(fdesc->fd == arg_fd)
 							{
-								if(fdesc->fdesc_fd_buf == NULL && !(fdesc->fdesc_file->deny_write))
+								if(!(fdesc->fdesc_file->deny_write))
 								{
 									f->eax = file_read(fdesc->fdesc_file, arg_buf, arg_size);
 								}
-								lock_release(&fdesc->fdesc_fd_buf->fd_buffer_lock);
 								f->eax = i;
 								}
 								break;    // break the for loop
@@ -271,20 +267,11 @@ syscall_handler (struct intr_frame *f UNUSED)
 						for(elem = list_begin(&cur->fd_list); elem != list_end(&cur->fd_list); elem = list_next(elem)){
 							struct file_descriptor *fdesc = list_entry(elem, struct file_descriptor, fdesc_elem);
 							if(fdesc->fd == arg_fd){
-								if(fdesc->fdesc_fd_buf == NULL && !(fdesc->fdesc_file->deny_write)){
+								if(!(fdesc->fdesc_file->deny_write)){
 									f->eax = file_write(fdesc->fdesc_file, arg_buf, arg_size);
 								}
-								else{
-									//if the buffer contains data
-									int i = 0;
-									lock_acquire(&fdesc->fdesc_fd_buf->fd_buffer_lock);
-									while (i < arg_size && fdesc->fdesc_fd_buf->buf_end != MAX_BUF_SIZE) {
-							          fdesc->fdesc_fd_buf->fd_buffer[fdesc->fdesc_fd_buf->buf_end] = arg_buf[i];
-							          fdesc->fdesc_fd_buf->buf_end++;
-							          i++;
-							        }
-									lock_release(&fdesc->fdesc_fd_buf->fd_buffer_lock);
-									f->eax = i;
+								
+								f->eax = i;
 								}
 								break;    // break the for loop
 							}
@@ -327,8 +314,6 @@ syscall_handler (struct intr_frame *f UNUSED)
 						struct file_descriptor *f_curr = list_entry(e, struct file_descriptor,fdesc_elem);
 						if(f_curr->fd==f_desc)
 						{
-							if(f_curr->fdesc_fd_buf==NULL)
-
 								f->eax = f_curr->fdesc_file->pos;
 						break;
 						}						
@@ -355,10 +340,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 
 							{
 								list_remove(e);
-								if(f_curr->fdesc_fd_buf==NULL)
-									{
-										file_close(f_curr->fdesc_file);
-									}
+								file_close(f_curr->fdesc_file);
 							}
 						free(f_curr);
 						break;
