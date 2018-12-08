@@ -182,7 +182,7 @@ process_exit (void)
     }
     
 
-  file_close(thread_current()->self);
+  file_close(thread_current()->cur_file);
 
   if(parent != NULL) {
     lock_acquire(&(parent->child_lock));
@@ -403,7 +403,7 @@ load (struct args_passed *args_p, void (**eip) (void), void **esp)
 
  done:
   /* We arrive here whether the load is successful or not. */
-  file_close (file);
+  //file_close (file);
   return success;
 }
 

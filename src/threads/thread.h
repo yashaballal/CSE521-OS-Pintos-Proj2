@@ -7,7 +7,6 @@
 #include "threads/synch.h"
 #include "threads/interrupt.h"
 #ifdef USERPROG
-#include "userprog/process.h"
 #include "filesys/file.h"
 #endif
 
@@ -108,7 +107,7 @@ struct thread
     bool child_ready;               // flag to check if the child is in ready status
     int fd_counter;                 // counter to set identifiers for newly created file descriptors
     struct list fd_list;            // list of file descriptors held by the thread
-    struct file cur_file;           // holds the current file the thread is working upon
+    struct file *cur_file;          // holds the current file the thread is working upon
     struct list child_list;         // list storing all the child processes
     int exec_status;                //Used to maintain status if the exec system call was successful  
     uint32_t *pagedir;                  /* Page directory. */
