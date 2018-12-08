@@ -222,8 +222,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 								{
 									f->eax = file_read(fdesc->fdesc_file, arg_buf, arg_size);
 								}
-								f->eax = i;
-								}
+							}
 								break;    // break the for loop
 							}
 						}
