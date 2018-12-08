@@ -1,6 +1,8 @@
 #include "userprog/syscall.h"
 #include <stdio.h>
+#include <list.h>
 #include <syscall-nr.h>
+<<<<<<< HEAD
 #include <list.h>
 #include "threads/interrupt.h"
 #include "threads/thread.h"
@@ -9,9 +11,20 @@
 #include "threads/synch.h"
 #include "threads/malloc.h"
 #include "filesys/filesys.h"
+=======
 
-#define WORD_SIZE sizeof(void *)
+#include "threads/interrupt.h"
+#include "threads/thread.h"
+#include "devices/shutdown.h"
+#include "filesys/filesys.h"
+#include "filesys/file.h"
+#include "devices/input.h"
+#include "threads/malloc.h"
+#include "threads/vaddr.h"
+>>>>>>> f6cb50f3184fcd82511ac573e09826fda682262f
+
 #define MAX_ARGS_COUNT 3
+#define STDOUT_LIMIT 100    // setting an arbitrary limit of bytes to be written
 
 struct lock filesys_lock;
 static void syscall_handler (struct intr_frame *);
@@ -20,12 +33,17 @@ void
 syscall_init (void) 
 {
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
+<<<<<<< HEAD
   lock_init(&filesys_lock);
+=======
+  lock_init(&file_lock);
+>>>>>>> f6cb50f3184fcd82511ac573e09826fda682262f
 }
 
 static void
 syscall_handler (struct intr_frame *f UNUSED) 
 {
+<<<<<<< HEAD
 	if(!(is_user_vaddr(f->esp)) || pagedir_get_page(thread_current()->pagedir, f->esp) == NULL)
 	{
 		thread_current()->exec_status = status;
@@ -37,6 +55,22 @@ syscall_handler (struct intr_frame *f UNUSED)
 	int syscall_num = *stack_pointer;
 	void *args_refs[MAX_ARGS_COUNT];
         printf("Reached the syscall handler");
+=======
+
+	int* stack_pointer = f->esp;
+	int syscall_num = *stack_pointer;
+	void *args_refs[MAX_ARGS_COUNT];
+
+    //printf("f->esp : %s    valid?:%d\n",f->esp, is_user_vaddr(f->esp));
+
+    if(!(is_user_vaddr(f->esp)) || pagedir_get_page(thread_current()->pagedir, f->esp) == NULL)
+	{
+		printf("LC: Found an invalid stack pointer\n");
+		f->eax = -1;
+		system_exit(-1);
+	}
+	
+>>>>>>> f6cb50f3184fcd82511ac573e09826fda682262f
 	for(int i=0; i<MAX_ARGS_COUNT; i++){
 		args_refs[i] = stack_pointer + (i+1);
 	}
@@ -48,6 +82,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 			break;
 
 		case SYS_EXIT:
+<<<<<<< HEAD
 		{
 			/*The argument to exit is an integer pointer*/
 			/*if(!(is_user_vaddr(args_refs[0])))
@@ -59,85 +94,329 @@ syscall_handler (struct intr_frame *f UNUSED)
 	        thread_current()->exec_status = status;
 	        printf("%s: exit(%d)\n", thread_current()->name, status);
 		    thread_exit();
+=======
+			{
+				//printf("Enter sys exit\n");
+				int status = *((int *) args_refs[0]);
+				if(status < -1){
+					status = -1;
+				}
+				system_exit(status);
+			}
+>>>>>>> f6cb50f3184fcd82511ac573e09826fda682262f
 			break;
-		}
+
 		case SYS_EXEC:
+			{
+				//printf("LC : Inside exec \n");
+				char* copy_var;
+				char* exec_prog = *((char **)args_refs[0]);
+				//printf("LC: exec_prog : %s\n", exec_prog);
+
+				
+				copy_var = malloc(strlen(exec_prog) + 1);
+				strlcpy(copy_var, exec_prog, PGSIZE);
+				//printf("LC: Copy var created - %s\n",copy_var);
+
+				char* save_ptr;
+				copy_var = strtok_r(copy_var, " ", &save_ptr);
+				//printf("Token : %s\n", copy_var);
+				//printf("LC : Here");
+				
+				lock_acquire(&file_lock);
+				struct file *opened_file = filesys_open(copy_var);
+
+				if(opened_file == NULL){
+					//printf("LC: There was an error in opening the file");
+					f->eax = -1;
+				}
+				else{
+					file_close(opened_file);
+					f->eax = process_execute(exec_prog);
+				}
+				lock_release(&file_lock);
+			}
 			break;
 
 		case SYS_WAIT:
+			{
+				int status = *((int *) args_refs[0]);
+				f->eax = process_wait(status);
+			}
 			break;
 
 		case SYS_CREATE:
+			{
+				char* arg_fileName = *((char **)args_refs[0]);
+				unsigned arg_size = *((unsigned*)args_refs[1]);
+
+				if(arg_fileName == NULL){
+					//printf("LC : File name is null\n");
+					f->eax = -1;
+					system_exit(-1);
+				}
+
+				lock_acquire(&file_lock);
+				f->eax = filesys_create(arg_fileName, arg_size);
+				lock_release(&file_lock);
+
+			}
 			break;
 
 		case SYS_REMOVE:
+			{
+				char* arg_fileName = *((char **)args_refs[0]);
+
+				if(arg_fileName == NULL){
+					//printf("LC : File name is null\n");
+					f->eax = -1;
+					system_exit(-1);
+				}
+
+				lock_acquire(&file_lock);
+				f->eax = filesys_remove(arg_fileName);
+				lock_release(&file_lock);
+			}
 			break;
 
 		case SYS_OPEN:
-		{
-			char *file_name = *((char **) args_refs[0]);
-  			/*if(file_name == NULL)
-    		        {
-    		  	  To notify that the thread has failed to the parent process
-    		  	  thread_current()->exec_status = -1;
-    		  	  Pintos system call handler returns a value to the user program by 
-    		  	  modifying the eax register
-    		  	  f->eax = -1;
-    		        }*/	
+			{
+				char* arg_fileName = *((char **)args_refs[0]);
+				//printf("LC: File name : %s\n",arg_fileName);
+				if(arg_fileName == NULL){
+					//printf("LC : File name is null\n");
+					f->eax = -1;
+					break;
+				}
 
-  			  lock_acquire(&filesys_lock);
-  			  struct file *file_n = filesys_open(file_name);
-  			  lock_release(&filesys_lock);
+				lock_acquire(&file_lock);
+				struct file *opened_file = filesys_open(arg_fileName);
+				lock_release(&file_lock);
 
-  			  if( file_n == NULL)
-  			  {
-  			  	 thread_current()->exec_status = -1;
-  			  	 f->eax = -1;
-  			  	 break;
-  			  }
+				if(opened_file == NULL){
+					//printf("LC: There was an error in opening the file");
+					f->eax = -1;
+				        break;
+				}
 
-  			  struct file_descriptor *fdesc = (struct file_descriptor *) malloc(sizeof(struct file_descriptor));
-  			  /*Need to maintain a list of the files opened by the thread*/	
-  			  struct thread *thread_cur = thread_current();
-  			  fdesc->fd = thread_cur->fd_counter;
-  			  thread_cur->fd_counter++;
-  			  fdesc->file = file_n;
-  			  //printf("Came till here");
-  			  list_push_back(&thread_cur->fd_list, &fdesc->fd_elem);
-  			  //printf("The next line" );
-  			  f->eax = fdesc->fd;
-  			break;
-        }
+				struct thread *cur = thread_current();
+				struct file_descriptor *fdesc = malloc(sizeof(struct file_descriptor));
+                                fdesc->fd = cur->fd_counter;
+				(cur->fd_counter)++;
+				fdesc->fdesc_file = opened_file;
+				fdesc->fdesc_fd_buf = NULL;    // nothing in buffer when the file is opened
+				//printf("LC: Before push\n");
+				list_push_back(&cur->fd_list, &fdesc->fdesc_elem);
+				//printf("LC: After push\n");
+				f->eax = fdesc->fd;
+			}	
+			break;
+			
+
 		case SYS_FILESIZE:
+			{
+				f->eax = 0;
+				int f_desc = *((int*)args_refs[0]);
+				struct thread *curr_thread = thread_current();
+				struct list_elem *e;
+
+				for(e=list_begin(&curr_thread->fd_list);e!=list_end(&curr_thread->fd_list);e=list_next(e))
+				{
+					struct file_descriptor *f_curr = list_entry(e, struct file_descriptor,fdesc_elem);
+					if(f_curr->fd==f_desc)
+					{
+						if(f_curr->fdesc_fd_buf==NULL)
+
+							f->eax = file_length(f_curr->fdesc_file);
+					break;
+					}						
+				}
+			}
 			break;
 
 		case SYS_READ:
-			printf("LC: Inside read syscall\n");
+			{
+				//printf("LC: Inside read syscall\n");
+				int arg_fd = *((int*)args_refs[0]);
+				char* arg_buf = (char*)(*((int*)args_refs[1]));
+				unsigned arg_size = *((unsigned*)args_refs[2]);
+
+				if(!(is_user_vaddr(arg_buf))){
+					f->eax = -1;
+					system_exit(-1);
+				}
+				else{
+					if(arg_fd == 1){
+						//write operation is invalid in read syscall
+						f->eax = -1;
+					}
+					else if(arg_fd == 0){
+						//standard input read
+						f->eax = input_getc();
+					}
+					else{
+						// file read
+						f->eax = -1;    //the file descriptor was not found in the fd_list
+						struct list_elem *elem;
+						struct thread *cur = thread_current();
+						for(elem = list_begin(&cur->fd_list); elem != list_end(&cur->fd_list); elem = list_next(elem)){
+							struct file_descriptor *fdesc = list_entry(elem, struct file_descriptor, fdesc_elem);
+							if(fdesc->fd == arg_fd){
+								if(fdesc->fdesc_fd_buf == NULL && !(fdesc->fdesc_file->deny_write)){
+									f->eax = file_read(fdesc->fdesc_file, arg_buf, arg_size);
+								}
+								else{
+									//if the buffer contains data
+									int i = 0;
+									lock_acquire(&fdesc->fdesc_fd_buf->fd_buffer_lock);
+									while (i < arg_size && fdesc->fdesc_fd_buf->buf_end != fdesc->fdesc_fd_buf->buf_start) {
+							          arg_buf[i] = fdesc->fdesc_fd_buf->fd_buffer[fdesc->fdesc_fd_buf->buf_start];
+							          fdesc->fdesc_fd_buf->buf_start++;
+							          i++;
+							        }
+									lock_release(&fdesc->fdesc_fd_buf->fd_buffer_lock);
+									f->eax = i;
+								}
+								break;    // break the for loop
+							}
+						}
+					}
+				}
+			}
 			break;
 
 		case SYS_WRITE:
 			{
 				//printf("LC: Inside write syscall\n");
-				int fd = *((int*)args_refs[0]);
-				void* buf = (void*)(*((int*)args_refs[1]));
-				unsigned size = *((unsigned*)args_refs[2]);
-	  			//printf("fd - %d \n buf - %s \nsize - %d\n", fd, buf, size);
-	  			if(fd == 1){
-					putbuf(buf, size);
-					f->eax = buf;
+				int arg_fd = *((int*)args_refs[0]);
+				char* arg_buf = (char*)(*((int*)args_refs[1]));
+				unsigned arg_size = *((unsigned*)args_refs[2]);
+	  			//printf("fd - %d \n buf - %s \nsize - %d\n", arg_fd, arg_buf, arg_size);
+
+				if(!(is_user_vaddr(arg_buf))){
+					f->eax = -1;
+					system_exit(-1);
+				}
+				else{
+					if(arg_fd == 0){
+		  				// read operation is invalid in write syscall
+		  				f->eax = -1;
+		  			}
+		  			else if(arg_fd == 1){
+		  				// console write
+		  				if(arg_size > STDOUT_LIMIT){
+		  					putbuf(arg_buf, STDOUT_LIMIT);
+							f->eax = STDOUT_LIMIT;
+		  				}
+		  				else{
+		  					putbuf(arg_buf, arg_size);
+		  					f->eax = arg_size;
+		  				}
+					}
+					else{
+						// file write
+						f->eax = -1;    //the file descriptor was not found in the fd_list
+						struct list_elem *elem;
+						struct thread *cur = thread_current();
+						for(elem = list_begin(&cur->fd_list); elem != list_end(&cur->fd_list); elem = list_next(elem)){
+							struct file_descriptor *fdesc = list_entry(elem, struct file_descriptor, fdesc_elem);
+							if(fdesc->fd == arg_fd){
+								if(fdesc->fdesc_fd_buf == NULL && !(fdesc->fdesc_file->deny_write)){
+									f->eax = file_write(fdesc->fdesc_file, arg_buf, arg_size);
+								}
+								else{
+									//if the buffer contains data
+									int i = 0;
+									lock_acquire(&fdesc->fdesc_fd_buf->fd_buffer_lock);
+									while (i < arg_size && fdesc->fdesc_fd_buf->buf_end != MAX_BUF_SIZE) {
+							          fdesc->fdesc_fd_buf->fd_buffer[fdesc->fdesc_fd_buf->buf_end] = arg_buf[i];
+							          fdesc->fdesc_fd_buf->buf_end++;
+							          i++;
+							        }
+									lock_release(&fdesc->fdesc_fd_buf->fd_buffer_lock);
+									f->eax = i;
+								}
+								break;    // break the for loop
+							}
+						}
+					}
 				}
 			}
 			break;
 
 		case SYS_SEEK:
+			{
+				int f_desc = *((int *)args_refs[0]);
+				unsigned new_pos = *((unsigned *) args_refs[1]);
+
+				struct thread *curr_thread = thread_current();
+				struct list_elem *e;
+				for(e=list_begin(&curr_thread->fd_list);e!=list_end(&curr_thread->fd_list);e=list_next(e))
+					{
+						struct file_descriptor *f_curr = list_entry(e, struct file_descriptor,fdesc_elem);
+						if(f_curr->fd==f_desc)
+							{
+								file_seek(f_curr->fdesc_file,new_pos);
+								return;
+							}
+					}
+			}
 			break;
 
 		case SYS_TELL:
+			{
+				int f_desc = *((int *)args_refs[0]);
+
+				struct thread *curr_thread = thread_current();
+
+				struct list_elem *e;
+
+				for(e=list_begin(&curr_thread->fd_list);e!=list_end(&curr_thread->fd_list);e=list_next(e))
+
+					{
+						struct file_descriptor *f_curr = list_entry(e, struct file_descriptor,fdesc_elem);
+						if(f_curr->fd==f_desc)
+						{
+							if(f_curr->fdesc_fd_buf==NULL)
+
+								f->eax = f_curr->fdesc_file->pos;
+						break;
+						}						
+					}
+				f->eax = -1;
+			}
+
 			break;
 
 		case SYS_CLOSE:
+			{
+				int f_desc = *((int *)args_refs[0]);
+
+				struct thread *curr_thread = thread_current();
+
+				struct list_elem *e;
+
+				for(e=list_begin(&curr_thread->fd_list);e!=list_end(&curr_thread->fd_list);e=list_next(e))
+
+					{
+						struct file_descriptor *f_curr = list_entry(e, struct file_descriptor,fdesc_elem);
+
+						if(f_curr->fd==f_desc)
+
+							{
+								list_remove(e);
+								if(f_curr->fdesc_fd_buf==NULL)
+									{
+										file_close(f_curr->fdesc_file);
+									}
+							}
+						free(f_curr);
+						break;
+					}
+			}
 			break;
 
+<<<<<<< HEAD
 
 	}
 
@@ -149,4 +428,24 @@ syscall_handler (struct intr_frame *f UNUSED)
 
   // printf ("system call!\n");
   // thread_exit ();
+=======
+
+		default:
+		{
+			printf("LC: SYSCALL did not match any of the cases\n");
+			system_exit(-1);
+		}
+			break;
+	}
+  // printf ("system call!\n");
+  // thread_exit ();
+}
+
+void system_exit(int exit_status){
+    //printf("LC: Inside system_exit()\n");
+    //printf("status = %d\n",exit_status);
+    thread_current()->exec_status = exit_status;
+    printf("%s: exit(%d)\n", thread_current()->name, exit_status);
+    thread_exit();
+>>>>>>> f6cb50f3184fcd82511ac573e09826fda682262f
 }
