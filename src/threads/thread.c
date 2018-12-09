@@ -39,8 +39,6 @@ static struct thread *initial_thread;
 static struct lock tid_lock;
 
 /* Stack frame for kernel_thread(). */
-static struct lock thread_file_lock;
-
 struct kernel_thread_frame 
   {
     void *eip;                  /* Return address. */
@@ -96,8 +94,6 @@ thread_init (void)
   list_init (&ready_list);
   list_init (&all_list);
 
-  lock_init(&thread_file_lock);
-
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
   init_thread (initial_thread, "main", PRI_DEFAULT);
@@ -106,18 +102,8 @@ thread_init (void)
 
 }
 
-void acquire_filesys_lock()
-{
-  lock_acquire(&thread_file_lock);
-}
-
-void release_filesys_lock()
-{
-  lock_release(&thread_file_lock);
-}
-
 /* Starts preemptive thread scheduling by enabling interrupts.
-   Also creates the idle thread.*/ 
+   Also creates the idle thread. */
 void
 thread_start (void) 
 {
@@ -215,16 +201,7 @@ thread_create (const char *name, int priority,
   sf->ebp = 0;
 
   #ifdef USERPROG
-  /*Since the file descriptor 1,2 and 3 is reserved for std input,output and error count will start from 3*/
-  t->fd_counter = 3;
   t->parent = thread_current();
-  t->running_code_file = NULL;
-  list_init(&t->fd_list);
-  list_init(&t->child_list);
-  cond_init(&t->child_cond);
-  lock_init(&t->child_lock);
-  int zero = 0;
-  memcpy(t->running_code_filename, &zero, 20);
   #endif
   /* Add to run queue. */
   thread_unblock (t);
@@ -619,3 +596,4 @@ allocate_tid (void)
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
+

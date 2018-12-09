@@ -111,14 +111,11 @@ struct thread
     struct list child_list;         // list storing all the child processes
     int exec_status;                //Used to maintain status if the exec system call was successful  
     uint32_t *pagedir;                  /* Page directory. */
-    struct file *running_code_file;
-    char running_code_filename[20]; 
 #endif
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
   };
-
 
 struct tchild_status{
    tid_t thread_id;
@@ -164,3 +161,4 @@ int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
 #endif /* threads/thread.h */
+

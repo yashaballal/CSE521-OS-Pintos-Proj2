@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <list.h>
 #include <syscall-nr.h>
+
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 #include "devices/shutdown.h"
@@ -14,7 +15,6 @@
 #define MAX_ARGS_COUNT 3
 #define STDOUT_LIMIT 100    // setting an arbitrary limit of bytes to be written
 
-struct lock filesys_lock;
 static void syscall_handler (struct intr_frame *);
 
 void
@@ -41,8 +41,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 		system_exit(-1);
 	}
 	
-	for(int i=0; i<MAX_ARGS_COUNT; i++)
-	{
+	for(int i=0; i<MAX_ARGS_COUNT; i++){
 		args_refs[i] = stack_pointer + (i+1);
 	}
 	//printf("LC: Inside syscall handler - arguments captured\n");
@@ -88,9 +87,9 @@ syscall_handler (struct intr_frame *f UNUSED)
 					f->eax = -1;
 				}
 				else{
-					file_close(opened_file);
 					f->eax = process_execute(exec_prog);
 				}
+				file_close(opened_file);
 				lock_release(&file_lock);
 			}
 			break;
@@ -181,8 +180,8 @@ syscall_handler (struct intr_frame *f UNUSED)
 					struct file_descriptor *f_curr = list_entry(e, struct file_descriptor,fdesc_elem);
 					if(f_curr->fd==f_desc)
 					{
-							f->eax = file_length(f_curr->fdesc_file);
-					break;
+						f->eax = file_length(f_curr->fdesc_file);
+						break;
 					}						
 				}
 			}
@@ -204,10 +203,9 @@ syscall_handler (struct intr_frame *f UNUSED)
 						//write operation is invalid in read syscall
 						f->eax = -1;
 					}
-					else if(arg_fd == 0)
-					{
+					else if(arg_fd == 0){
 						//standard input read
-   						for(int i=0;i<arg_size ;i++)
+						for(int i=0;i<arg_size ;i++)
 							arg_buf[i] = input_getc();
 						f->eax = arg_size;
 					}
@@ -218,22 +216,19 @@ syscall_handler (struct intr_frame *f UNUSED)
 						struct thread *cur = thread_current();
 						for(elem = list_begin(&cur->fd_list); elem != list_end(&cur->fd_list); elem = list_next(elem)){
 							struct file_descriptor *fdesc = list_entry(elem, struct file_descriptor, fdesc_elem);
-							if(fdesc->fd == arg_fd)
-							{
-								if(!(fdesc->fdesc_file->deny_write))
-								{
-									acquire_filesys_lock();
+							if(fdesc->fd == arg_fd){
+								if(!(fdesc->fdesc_file->deny_write)){
+									lock_acquire(&file_lock);
 									f->eax = file_read(fdesc->fdesc_file, arg_buf, arg_size);
-									release_filesys_lock();
+									lock_release(&file_lock);
 								}
-                                      break;
-							}
-								//break;    // break the for loop
+								break;    // break the for loop
 							}
 						}
 					}
-				break;
+				}
 			}
+			break;
 
 		case SYS_WRITE:
 			{
@@ -268,24 +263,20 @@ syscall_handler (struct intr_frame *f UNUSED)
 						f->eax = -1;    //the file descriptor was not found in the fd_list
 						struct list_elem *elem;
 						struct thread *cur = thread_current();
-						for(elem = list_begin(&cur->fd_list); elem != list_end(&cur->fd_list); elem = list_next(elem))
-						{
+						for(elem = list_begin(&cur->fd_list); elem != list_end(&cur->fd_list); elem = list_next(elem)){
 							struct file_descriptor *fdesc = list_entry(elem, struct file_descriptor, fdesc_elem);
-							if(fdesc->fd == arg_fd)
-							{
-								if(!(fdesc->fdesc_file->deny_write))
-								{
-									acquire_filesys_lock();
+							if(fdesc->fd == arg_fd){
+								if(!(fdesc->fdesc_file->deny_write)){
+									lock_acquire(&file_lock);
 									f->eax = file_write(fdesc->fdesc_file, arg_buf, arg_size);
-									release_filesys_lock();
+									lock_release(&file_lock);
 								}
-								 break;
-								}
-							//	break;    // break the for loop
+								break;    // break the for loop
 							}
 						}
 					}
 				}
+			}
 			break;
 
 		case SYS_SEEK:
@@ -321,8 +312,8 @@ syscall_handler (struct intr_frame *f UNUSED)
 						struct file_descriptor *f_curr = list_entry(e, struct file_descriptor,fdesc_elem);
 						if(f_curr->fd==f_desc)
 						{
-								f->eax = f_curr->fdesc_file->pos;
-						break;
+							f->eax = f_curr->fdesc_file->pos;
+							break;
 						}						
 					}
 				f->eax = -1;
@@ -354,6 +345,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 					}
 			}
 			break;
+
 
 		default:
 		{

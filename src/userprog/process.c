@@ -56,7 +56,7 @@ process_execute (const char *file_name)
   struct tchild_status *child = malloc(sizeof(struct tchild_status));
   child->thread_id = tid;
   child->completed = false;
-  child->status = -1;
+  child->status = -10;
   list_push_back(&(thread_current()->child_list), &(child->child_elem));
 
   if (tid == TID_ERROR)
@@ -156,47 +156,14 @@ process_wait (tid_t child_tid UNUSED)
   return return_value;
 }
 
-static thread_action_func mark_dead;
-
-static void mark_dead(struct thread *child, void *args_ UNUSED) {
-  struct thread *cur = thread_current();
-
-  if (child->parent == cur) {
-    child->parent = NULL;
-  }
-}
-
-static thread_action_func check_running_code_writable;
-
-static void check_running_code_writable(struct thread *t, void *arg) {
-  struct thread *cur = thread_current();
-  if (strlen(t->running_code_filename) != 0 && strcmp(cur->running_code_filename, t->running_code_filename) && t != cur) {
-    *((bool *) arg) = false;
-  }
-}
-
-
 /* Free the current process's resources. */
 void
 process_exit (void)
 {
   struct thread *cur = thread_current ();
-  //thread_foreach(&mark_dead, (void *) 0);
   uint32_t *pd;
   struct thread *parent = cur->parent;
 
-  bool can_allow_writes = true;
-
-  int old = intr_disable();
-  thread_foreach (&check_running_code_writable, &can_allow_writes);
-  intr_set_level(old);
-
-  if(can_allow_writes && cur->running_code_file != NULL) 
-  {
-    file_allow_write(cur->running_code_file);
-  }
-
-   file_close(cur->running_code_file);
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   pd = cur->pagedir;
@@ -217,40 +184,22 @@ process_exit (void)
 
   file_close(thread_current()->cur_file);
 
+
   if(parent != NULL) {
     lock_acquire(&(parent->child_lock));
     struct list_elem *e;
-    for (e = list_begin(&parent->child_list); e != list_end(&parent->child_list); e = list_next(e))
-    {
+    for (e = list_begin(&parent->child_list); e != list_end(&parent->child_list); e = list_next(e)) {
       struct tchild_status *child = list_entry(e, struct tchild_status, child_elem);
-      if (child->thread_id == cur->tid) 
-      {
+      if (child->thread_id == cur->tid) {
         child->completed = true;
         child->status = cur->exec_status;
         break;
       }
     }
+  }
     cond_signal(&(parent->child_cond), &(parent->child_lock));
     lock_release(&(parent->child_lock));
-  }
-
-  pd = cur->pagedir;
-  if (pd != NULL) 
-    {
-      /* Correct ordering here is crucial.  We must set
-         cur->pagedir to NULL before switching page directories,
-         so that a timer interrupt can't switch back to the
-         process page directory.  We must activate the base page
-         directory before destroying the process's page
-         directory, or our active page directory will be one
-         that's been freed (and cleared). */
-      cur->pagedir = NULL;
-      pagedir_activate (NULL);
-
-      // Freeing frames happens in pagedir_destroy
-      pagedir_destroy (pd);
-    }
-  
+    
 }
 
 /* Sets up the CPU for running user code in the current
@@ -268,7 +217,7 @@ process_activate (void)
      interrupts. */
   tss_update ();
 }
-
+
 /* We load ELF binaries.  The following definitions are taken
    from the ELF specification, [ELF1], more-or-less verbatim.  */
 
@@ -369,6 +318,7 @@ load (struct args_passed *args_p, void (**eip) (void), void **esp)
       goto done; 
     }
 
+  file_deny_write(file);
   t->cur_file = file;
 
   /* Read and verify executable header. */
@@ -446,9 +396,6 @@ load (struct args_passed *args_p, void (**eip) (void), void **esp)
   /* Set up stack. */
   if (!setup_stack (args_p, esp))
     goto done;
-  
-  file_deny_write(file);
-
 
   //printf("Before for top = %s\n",top);
     /* Start address. */
