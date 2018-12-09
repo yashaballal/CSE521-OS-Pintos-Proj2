@@ -56,7 +56,7 @@ process_execute (const char *file_name)
   struct tchild_status *child = malloc(sizeof(struct tchild_status));
   child->thread_id = tid;
   child->completed = false;
-  child->status = -10;
+  child->status = -1;
   list_push_back(&(thread_current()->child_list), &(child->child_elem));
 
   if (tid == TID_ERROR)

@@ -17,6 +17,8 @@
 
 static void syscall_handler (struct intr_frame *);
 
+static struct lock file_lock;    //lock created for file system operations synchronizations
+
 void
 syscall_init (void) 
 {
